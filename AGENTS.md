@@ -2,7 +2,7 @@
 
 **This is an active project** in the `projects/` directory, discovered and
 executed by infrastructure discovery functions. Public exemplar roster:
-[`projects/AGENTS.md`](../../AGENTS.md#permanent-canonical-exemplars-and-optional-search-add-on).
+[`projects/AGENTS.md`](../../AGENTS.md#permanent-canonical-exemplars).
 Publication DOI layout:
 [`docs/guides/zenodo-doi-strategy.md`](../../../docs/guides/zenodo-doi-strategy.md).
 Manuscript semantics:
@@ -102,9 +102,17 @@ copy the numbers here.
 - [`docs/testing_philosophy.md`](docs/testing_philosophy.md) — zero-mock policy, before touching any test.
 - [`docs/architecture.md`](docs/architecture.md) — the thin-orchestrator boundary and BPL pipeline correspondence, before altering `scripts/`/`src/`.
 
+
+## Agent skill
+
+A Hermes/agentskills.io-compatible skill for this exemplar lives at
+[`.agents/skills/template-methods-paper/SKILL.md`](.agents/skills/template-methods-paper/SKILL.md).
+Load it when working inside this template to get when-to-use guidance,
+quick reference commands, and pitfalls.
+
 ## See Also
 
-- [Root projects AGENTS.md](../../AGENTS.md#permanent-canonical-exemplars-and-optional-search-add-on) — public exemplar roster.
+- [Root projects AGENTS.md](../../AGENTS.md#permanent-canonical-exemplars) — public exemplar roster.
 - [Publishing guide](../../../docs/guides/publishing-guide.md) · [Zenodo DOI strategy](../../../docs/guides/zenodo-doi-strategy.md).
 - [`manuscript/SYNTAX.md`](manuscript/SYNTAX.md) — Pandoc citation/cross-reference syntax.
 - [`src/AGENTS.md`](src/AGENTS.md) / [`src/methods_dsl/AGENTS.md`](src/methods_dsl/AGENTS.md) — DSL library API reference.
