@@ -27,11 +27,11 @@ reports numerical results from running an algorithm, see
 
 ```bash
 # Run the methods analysis pipeline (compiles, validates, exports artifacts + a figure)
-uv run python template_methods_paper/scripts/methods_analysis.py
+uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
 
 # View outputs
-ls -la template_methods_paper/output/figures/
-cat template_methods_paper/output/data/compiled_plans.json
+ls -la projects/templates/template_methods_paper/output/figures/
+cat projects/templates/template_methods_paper/output/data/compiled_plans.json
 ```
 
 To regenerate this exemplar from the public monorepo:
@@ -40,9 +40,9 @@ To regenerate this exemplar from the public monorepo:
 git clone https://github.com/docxology/template
 cd template
 uv sync
-uv run python scripts/execute_pipeline.py --project templates/template_methods_paper --core-only
-uv run python scripts/04_validate_output.py --project templates/template_methods_paper
-uv run python scripts/05_copy_outputs.py --project templates/template_methods_paper
+uv run python scripts/runner/execute_pipeline.py --project templates/template_methods_paper --core-only
+uv run python scripts/pipeline/stage_04_validate.py --project templates/template_methods_paper
+uv run python scripts/pipeline/stage_05_copy.py --project templates/template_methods_paper
 ```
 
 ## Tests, outputs, and validation
@@ -51,8 +51,8 @@ uv run python scripts/05_copy_outputs.py --project templates/template_methods_pa
 is not proof — confirm tests collected > 0 and coverage ≥ 90%:
 
 ```bash
-uv run pytest template_methods_paper/tests \
-  --cov=template_methods_paper/src --cov-fail-under=90
+uv run pytest projects/templates/template_methods_paper/tests \
+  --cov=projects/templates/template_methods_paper/src --cov-fail-under=90
 # live baseline: docs/_generated/COUNTS.md
 ```
 
@@ -62,7 +62,7 @@ example method, a step-count figure, and gate/trust-chain reports) and
 prints each path for manifest collection. Validate a run with stage 04:
 
 ```bash
-uv run python scripts/04_validate_output.py --project templates/template_methods_paper
+uv run python scripts/pipeline/stage_04_validate.py --project templates/template_methods_paper
 ```
 
 ## Configuration
@@ -118,7 +118,7 @@ graph TD
 
 Concept DOI: [10.5281/zenodo.21086548](https://doi.org/10.5281/zenodo.21086548) | Version DOI: [10.5281/zenodo.21086549](https://zenodo.org/records/21086549) | Repository: —
 
-Publishing surface — 12 platforms, 9 published:
+Publishing surface — 20 platforms, 9 published:
 
 | Platform | Tier | Status | Reference | Credentials |
 | --- | --- | --- | --- | --- |
@@ -134,10 +134,18 @@ Publishing surface — 12 platforms, 9 published:
 | netlify | first-class | ✅ published | [https://6a444b88aa6e4e3c5d216e16--tranquil-kleicha-0c9203.netlify.app](https://6a444b88aa6e4e3c5d216e16--tranquil-kleicha-0c9203.netlify.app) | `NETLIFY_AUTH_TOKEN` |
 | huggingface_hub | first-class | ✅ published | [https://huggingface.co/datasets/ActiveInference/template_methods_paper](https://huggingface.co/datasets/ActiveInference/template_methods_paper) | `HUGGINGFACE_TOKEN`, `HF_TOKEN` |
 | osf | first-class | ✅ published | [https://osf.io/6d7nh/](https://osf.io/6d7nh/) | `OSF_TOKEN` |
+| amazon_kdp | documented | 🟡 planned | — | `AMAZON_KDP_EMAIL`, `AMAZON_KDP_PASSWORD` |
+| google_play_books | documented | 🟡 planned | — | `GOOGLE_PLAY_BOOKS_SERVICE_ACCOUNT_JSON` |
+| gumroad | documented | 🟡 planned | — | `GUMROAD_ACCESS_TOKEN` |
+| leanpub | documented | 🟡 planned | — | `LEANPUB_API_KEY` |
+| lulu | documented | 🟡 planned | — | `LULU_CLIENT_KEY`, `LULU_CLIENT_SECRET` |
+| draft2digital | documented | 🟡 planned | — | `DRAFT2DIGITAL_API_TOKEN` |
+| stripe | documented | 🟡 planned | — | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` |
+| ingramspark | documented | 🟡 planned | — | `INGRAMSPARK_CLIENT_ID`, `INGRAMSPARK_CLIENT_SECRET` |
 
 _Keywords: methods paper, domain-specific language, controlled methods, deterministic compilation, staged validation, dimensional analysis._
 
-_Status legend: ✅ published (durable identifier recorded in `config.yaml`) · ⚪ available (adapter implemented and locally verifiable) · 🟡 planned. This block is generated — edit `manuscript/config.yaml`, then regenerate with `uv run python -m infrastructure.publishing.status_report --project <path> --write`._
+_Status legend: ✅ published (durable identifier recorded in `config.yaml`) · 🔵 reserved (identifier reserved but not yet registered by final publication) · ⚪ available (adapter implemented and locally verifiable) · 🟡 planned. This block is generated — edit `manuscript/config.yaml`, then regenerate with `uv run python -m infrastructure.publishing.status_report --project <path> --write`._
 <!-- PUBLISHING-STATUS:END -->
 
 The 3 platforms still shown ⚪ available are not automatable to "published" with
@@ -175,5 +183,5 @@ for the library API.
 - Forward backlog: [`TODO.md`](TODO.md).
 - Standalone fork guide: [`STANDALONE.md`](STANDALONE.md).
 - Copy-and-customize config: [`manuscript/config.yaml.example`](manuscript/config.yaml.example).
-- Project validation: `uv run pytest template_methods_paper/tests --cov=template_methods_paper/src --cov-fail-under=90`.
-- Repo drift validation: `uv run python scripts/check_template_drift.py --strict`.
+- Project validation: `uv run pytest projects/templates/template_methods_paper/tests --cov=projects/templates/template_methods_paper/src --cov-fail-under=90`.
+- Repo drift validation: `uv run python scripts/audit/check_template_drift.py --strict`.
