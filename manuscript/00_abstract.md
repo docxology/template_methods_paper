@@ -18,7 +18,7 @@ A `Method` is a name, a set of typed parameters and resources, and an
 ordered, dependent set of steps — constructed directly as frozen Python
 dataclasses (`src/methods_dsl/model.py`) rather than parsed from new text
 syntax. Every `Quantity` carries a unit that resolves to one of
-{{DSL_UNIT_COUNT}} controlled units across seven dimensions, and every step
+{{DSL_UNIT_COUNT}} controlled units across eight dimensions, and every step
 names one of {{DSL_STEP_KIND_COUNT}} controlled-vocabulary intents
 (`src/methods_dsl/vocabulary.py`), executable on one of {{DSL_TARGET_COUNT}}
 backends. {{DSL_GATE_COUNT}} staged gates — structural, semantic, plan, and
@@ -44,8 +44,8 @@ side, we show that a controlled vocabulary expressed as typed dataclasses —
 not a parsed grammar — is sufficient to reproduce BPL's core safety
 properties (dimensional safety, staged validation, deterministic
 compilation) at a scope appropriate for a template exemplar. On the
-architecture side, the DSL is covered above the 90% project gate by a
-zero-mock test suite, generates {{ARTIFACT_TOTAL}} artifacts
+architecture side, the DSL is exercised by a zero-mock test suite under the
+repository's configured project coverage gate, generates {{ARTIFACT_TOTAL}} artifacts
 ({{ARTIFACT_FIGURES}} figures, {{ARTIFACT_DATA_FILES}} data files,
 {{ARTIFACT_REPORTS}} reports) per pipeline run, and injects reproducibility
 metadata (configuration hash `{{CONFIG_HASH}}`, build timestamp

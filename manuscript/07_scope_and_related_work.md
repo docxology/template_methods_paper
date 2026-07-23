@@ -1,9 +1,9 @@
 # Scope, Related Work, and Positioning {#sec:scope}
 
 This section situates the exemplar and states explicit boundaries. The goal
-is not to compete with BPL's full compiler pipeline [@bpl2026] — a
-~32,000-line implementation with a Lark grammar, a robot backend, and a
-hash-chained audit/compliance layer — but to show how a minimal,
+is not to compete with BPL's substantially larger full compiler pipeline
+[@bpl2026] — with its Lark grammar, robot backend, and hash-chained
+audit/compliance layer — but to show how a minimal,
 test-backed subset of BPL's domain-language design fits the template's
 reproducibility and rendering stack [@peng2011reproducible], generalized
 from wet-lab protocols to any controlled procedure.
@@ -30,9 +30,11 @@ compilation to a hashed plan.
 2. **Biology-native types.** BPL's unit system includes MW-aware
    concentration conversions and reagent physical-form metadata
    (`cas`, `physical_form`). This exemplar's `units.py` implements only the
-   dimensional-safety subset (mass, volume, temperature, time,
-   concentration, count, dimensionless) needed to demonstrate the "the type
-   system catches `mL + g`" guarantee.
+   dimensional-safety subset (mass, volume, temperature, time, molar
+   concentration, mass concentration, count, dimensionless) needed to
+   demonstrate the "the type system catches `mL + g`" guarantee — molar and
+   mass concentration are kept as distinct dimensions precisely because no
+   MW-aware conversion exists here to safely mix them.
 3. **A robot backend.** BPL lowers intents to Biomek i7 primitives
    (`aspirate`, `dispense`, `pick_tips`). This exemplar's `Target.AUTOMATED`
    has no backend-specific lowering stage; it is a scheduling and
@@ -64,7 +66,7 @@ protocol, an instrument calibration sweep, or a computational pipeline.
 2. **No backend lowering**: `Target` selects a compatibility class, not a
    concrete execution backend; no robot or simulation runtime exists in this
    exemplar.
-3. **Unit table, not a full unit library**: seven dimensions and a fixed
+3. **Unit table, not a full unit library**: eight dimensions and a fixed
    unit table, not a general-purpose dimensional-analysis library like
    `pint`.
 4. **No persistence layer**: `trust.py`'s hash-chain lives in memory for the
