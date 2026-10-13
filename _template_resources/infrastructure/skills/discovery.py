@@ -1,0 +1,433 @@
+"""Discover and parse agent-oriented SKILL.md descriptors in the repository."""
+
+import json
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Iterator, Sequence
+
+import yaml
+
+from infrastructure.project.public_scope import PUBLIC_PROJECT_NAMES
+from infrastructure.validation.docs.scan_scope import (
+    DEFAULT_EXCLUDE_PARTS,
+    should_exclude_path,
+)
+
+# Roots (relative to repository root) searched recursively for **/SKILL.md
+DEFAULT_SKILL_SEARCH_ROOTS: tuple[str, ...] = (
+    "infrastructure",
+    "scripts",
+    # Only the tracked public exemplars under projects/templates/ — NOT bare
+    # "projects", which would recurse into untracked, local-only sibling
+    # projects (private WIP, rotating research) and bake their SKILL.md names
+    # into the tracked manifest / skills index / MCP list_skills. The
+    # confidentiality invariant guarantees every tracked project skill lives
+    # under projects/templates/, so this scope loses nothing on a clean clone.
+    "projects/templates",
+    "fonds/templates",
+    "rules/templates",
+    "tools/templates",
+    "docs/prompts",
+    # Repository-scoped Agent Skills shared by Codex/OpenAI, Hermes, and
+    # runtime adapters. This root is public and tracked; private lifecycle
+    # workspaces remain excluded by the narrower roots above.
+    ".agents/skills",
+    ".cursor/skills",
+)
+
+_MANIFEST_VERSION = 1
+_PUBLIC_TEMPLATE_NAMES = frozenset(
+    name.removeprefix("templates/") for name in PUBLIC_PROJECT_NAMES if name.startswith("templates/")
+)
+
+
+@dataclass(frozen=True, slots=True)
+class SkillDescriptor:
+    """One discovered skill file with parsed YAML frontmatter."""
+
+    absolute_path: Path
+    relative_path: Path
+    name: str | None
+    description: str | None
+    frontmatter: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def path_posix(self) -> str:
+        """Path relative to repo root, POSIX-style (for JSON and @-references)."""
+        return self.relative_path.as_posix()
+
+    @property
+    def cursor_at(self) -> str:
+        """Suggested Cursor context reference (same as path_posix)."""
+        return self.path_posix
+
+
+def split_yaml_frontmatter(source: str) -> tuple[dict[str, Any] | None, str]:
+    """Split leading YAML frontmatter from markdown body.
+
+    Expects optional opening ``---``, YAML block, closing ``---``, then body.
+    Returns ``(parsed_dict_or_none, body)``.
+    """
+    if not source.startswith("---"):
+        return None, source
+    parts = source.split("---", 2)
+    if len(parts) < 3:
+        return None, source
+    yaml_blob = parts[1].strip()
+    body = parts[2]
+    if not yaml_blob:
+        return None, body
+    loaded = yaml.safe_load(yaml_blob)
+    if loaded is None:
+        return {}, body
+    if not isinstance(loaded, dict):
+        return None, body
+    return loaded, body
+
+
+def load_skill_descriptor(skill_path: Path, repo_root: Path) -> SkillDescriptor:
+    """Read a SKILL.md file and return a :class:`SkillDescriptor`.
+
+    Args:
+        skill_path: Path to the SKILL.md file.
+        repo_root: Repository root directory.
+
+    Returns:
+        Parsed SkillDescriptor.
+    """
+    resolved_skill = skill_path.resolve()
+    resolved_root = repo_root.resolve()
+    text = resolved_skill.read_text(encoding="utf-8")
+    fm, _body = split_yaml_frontmatter(text)
+    rel = resolved_skill.relative_to(resolved_root)
+    name = fm.get("name") if fm else None
+    desc = fm.get("description") if fm else None
+    if name is not None and not isinstance(name, str):
+        name = str(name)
+    if desc is not None and not isinstance(desc, str):
+        desc = str(desc)
+    return SkillDescriptor(
+        absolute_path=resolved_skill,
+        relative_path=rel,
+        name=name,
+        description=desc,
+        frontmatter=dict(fm) if fm else {},
+    )
+
+
+def _is_public_template_agent_skill_path(path: Path) -> bool:
+    """Return True for public exemplar-local Hermes/agentskills.io descriptors."""
+    parts = path.parts
+    return (
+        len(parts) >= 7
+        and parts[0] == "projects"
+        and parts[1] == "templates"
+        and parts[3] == ".agents"
+        and parts[4] == "skills"
+        and parts[-1] == "SKILL.md"
+    )
+
+
+def _is_public_root_agent_skill_path(path: Path) -> bool:
+    """Return True for tracked repository-scoped Agent Skills descriptors."""
+    parts = path.parts
+    return len(parts) >= 4 and parts[0] == ".agents" and parts[1] == "skills" and parts[-1] == "SKILL.md"
+
+
+def _is_public_cursor_skill_path(path: Path) -> bool:
+    """Return True for explicitly configured root Cursor skill descriptors."""
+    parts = path.parts
+    return len(parts) >= 4 and parts[0] == ".cursor" and parts[1] == "skills" and parts[-1] == "SKILL.md"
+
+
+def _is_registered_public_template_path(path: Path) -> bool:
+    """Return whether a path under ``projects/templates`` belongs to the public roster.
+
+    The directory is intentionally ignored by Git except for explicitly
+    tracked exemplars. A local ignored template can therefore coexist with the
+    public checkout, but it must not affect the generated skill manifest or
+    make duplicate-name checks fail.
+    """
+    parts = path.parts
+    return not (
+        len(parts) >= 3
+        and parts[0] == "projects"
+        and parts[1] == "templates"
+        and parts[2] not in _PUBLIC_TEMPLATE_NAMES
+    )
+
+
+def _search_bases(repo_root: Path, relative_root: str) -> tuple[Path, ...]:
+    """Expand a configured root into the concrete directories to traverse."""
+    if Path(relative_root).parts == ("projects", "templates"):
+        return tuple((repo_root / "projects" / name).resolve() for name in PUBLIC_PROJECT_NAMES)
+    return ((repo_root / relative_root).resolve(),)
+
+
+def _is_allowed_agent_tree_path(path: Path) -> bool:
+    """Return whether an excluded agent/editor subtree is a public skill lane."""
+    parts = path.parts
+    if len(parts) >= 2 and parts[:2] == (".agents", "skills"):
+        return True
+    if len(parts) >= 2 and parts[:2] == (".cursor", "skills"):
+        return True
+    if len(parts) < 4 or parts[:2] != ("projects", "templates") or parts[3] != ".agents":
+        return False
+    return len(parts) == 4 or parts[4] == "skills"
+
+
+def _iter_skill_files(base: Path, repo_root: Path) -> Iterator[Path]:
+    """Walk a skill root while pruning excluded and non-public subtrees."""
+    for current, dirnames, filenames in os.walk(base):
+        current_path = Path(current)
+        retained_dirs: list[str] = []
+        for dirname in sorted(dirnames):
+            candidate = current_path / dirname
+            try:
+                relative = candidate.relative_to(repo_root)
+            except ValueError:
+                relative = candidate
+            if not _is_registered_public_template_path(relative):
+                continue
+            if should_exclude_path(relative, DEFAULT_EXCLUDE_PARTS) and not _is_allowed_agent_tree_path(relative):
+                continue
+            retained_dirs.append(dirname)
+        dirnames[:] = retained_dirs
+        if "SKILL.md" in filenames:
+            yield current_path / "SKILL.md"
+
+
+def iter_skill_paths(repo_root: Path, roots: Sequence[str]) -> Iterator[Path]:
+    """Yield absolute paths to ``SKILL.md`` under each root relative to ``repo_root``."""
+    root_resolved = repo_root.resolve()
+    for rel in roots:
+        for base in _search_bases(root_resolved, rel):
+            if not base.is_dir():
+                continue
+            for p in _iter_skill_files(base, root_resolved):
+                if not p.is_file():
+                    continue
+                try:
+                    rel_path: Path = p.relative_to(root_resolved)
+                except ValueError:
+                    rel_path = p
+                if not _is_registered_public_template_path(rel_path):
+                    continue
+                # Skip vendored / tool-managed skill trees (.venv,
+                # site-packages, .claude, unscoped .agents,
+                # projects/archive, …) so discovery only sees tracked public
+                # skills. Two narrow `.agents` exceptions are deliberate:
+                # canonical exemplar descriptors and the repository root
+                # `.agents/skills` lane shared by Codex/OpenAI and Hermes.
+                if (
+                    should_exclude_path(rel_path, DEFAULT_EXCLUDE_PARTS)
+                    and not _is_public_template_agent_skill_path(rel_path)
+                    and not _is_public_root_agent_skill_path(rel_path)
+                    and not _is_public_cursor_skill_path(rel_path)
+                ):
+                    continue
+                yield p
+
+
+def _ensure_unique_names(skills: Sequence[SkillDescriptor]) -> None:
+    seen: dict[str, str] = {}
+    for s in skills:
+        if not s.name:
+            continue
+        prev = seen.get(s.name)
+        if prev is not None:
+            msg = f"Duplicate skill name {s.name!r}: {prev} and {s.path_posix}"
+            raise ValueError(msg)
+        seen[s.name] = s.path_posix
+
+
+def discover_skills(
+    repo_root: Path | str,
+    *,
+    search_roots: Sequence[str] | None = None,
+) -> list[SkillDescriptor]:
+    """Discover all ``SKILL.md`` files under configured roots and parse frontmatter.
+
+    Args:
+        repo_root: Repository root directory.
+        search_roots: Relative directory names to scan (default: :data:`DEFAULT_SKILL_SEARCH_ROOTS`).
+
+    Returns:
+        Descriptors sorted by POSIX relative path.
+
+    Raises:
+        ValueError: If two skills declare the same ``name`` in frontmatter.
+    """
+    root = Path(repo_root).resolve()
+    roots = tuple(search_roots) if search_roots is not None else DEFAULT_SKILL_SEARCH_ROOTS
+    found: list[SkillDescriptor] = []
+    for path in iter_skill_paths(root, roots):
+        found.append(load_skill_descriptor(path, root))
+    found.sort(key=lambda s: s.path_posix)
+    _ensure_unique_names(found)
+    return found
+
+
+def build_manifest_payload(skills: Sequence[SkillDescriptor]) -> dict[str, Any]:
+    """Build the canonical JSON-serializable manifest structure."""
+    rows: list[dict[str, Any]] = []
+    for s in skills:
+        row: dict[str, Any] = {
+            "name": s.name,
+            "description": s.description,
+            "path": s.path_posix,
+            "cursor_at": s.cursor_at,
+        }
+        metadata = s.frontmatter.get("metadata")
+        if isinstance(metadata, dict):
+            row["metadata"] = metadata
+        rows.append(row)
+    return {
+        "version": _MANIFEST_VERSION,
+        "skills": rows,
+    }
+
+
+def _format_search_roots_for_index(search_roots: Sequence[str]) -> str:
+    """Return a Markdown-friendly list of configured skill discovery roots."""
+    return ", ".join(f"`{root.rstrip('/')}/`" for root in search_roots)
+
+
+def build_skill_index_markdown(
+    skills: Sequence[SkillDescriptor],
+    *,
+    search_roots: Sequence[str] | None = None,
+) -> str:
+    """Build a human-readable Markdown index for discovered skills."""
+    roots = tuple(search_roots) if search_roots is not None else DEFAULT_SKILL_SEARCH_ROOTS
+    lines = [
+        "# Skill Index",
+        "",
+        "Generated from live `SKILL.md` discovery.",
+        "",
+        f"Default discovery roots: {_format_search_roots_for_index(roots)}.",
+        "Project-level skills are opt-in: they are discovered only when a project "
+        "ships a `SKILL.md` under those roots.",
+        "",
+        "| Skill | Path | Description |",
+        "| --- | --- | --- |",
+    ]
+    for skill in sorted(skills, key=lambda s: (s.name or "", s.path_posix)):
+        name = skill.name or "(unnamed)"
+        description = (skill.description or "").replace("\n", " ").replace("|", "\\|")
+        lines.append(f"| `{name}` | `{skill.path_posix}` | {description} |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_skill_manifest(
+    repo_root: Path | str,
+    output_path: Path | str | None = None,
+    *,
+    search_roots: Sequence[str] | None = None,
+) -> Path:
+    """Write skill manifest JSON for editors and agents.
+
+    Default output: ``<repo_root>/.cursor/skill_manifest.json``.
+
+    Returns:
+        Path to the written file.
+    """
+    root = Path(repo_root).resolve()
+    if output_path is None:
+        out = root / ".cursor" / "skill_manifest.json"
+    else:
+        out = Path(output_path)
+        if not out.is_absolute():
+            out = (root / out).resolve()
+        else:
+            out = out.resolve()
+    skills = discover_skills(root, search_roots=search_roots)
+    payload = build_manifest_payload(skills)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return out
+
+
+def load_manifest(manifest_path: Path | str) -> dict[str, Any]:
+    """Load a manifest JSON file."""
+    path = Path(manifest_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("manifest root must be a JSON object")
+    return data
+
+
+def manifest_matches_discovery(
+    repo_root: Path | str,
+    manifest_path: Path | str,
+    *,
+    search_roots: Sequence[str] | None = None,
+) -> tuple[bool, str]:
+    """Return whether the manifest matches current :func:`discover_skills` output."""
+    root = Path(repo_root).resolve()
+    mpath = Path(manifest_path).resolve()
+    live = discover_skills(root, search_roots=search_roots)
+    expected = build_manifest_payload(live)
+    try:
+        on_disk = load_manifest(mpath)
+    except FileNotFoundError:
+        return False, f"manifest missing: {mpath}"
+    except (json.JSONDecodeError, OSError, ValueError) as e:
+        return False, f"manifest unreadable: {e}"
+    if on_disk.get("version") != expected["version"]:
+        return False, "manifest version mismatch"
+    if on_disk.get("skills") != expected["skills"]:
+        return False, (
+            "manifest skills list out of date — either run "
+            "`uv run python -m infrastructure.skills write` to regenerate, "
+            "or commit any uncommitted SKILL.md edits first (pre-commit stashes "
+            "unstaged changes before pre-push hooks, so a manifest written from "
+            "edited-but-uncommitted SKILL.md content will fail this check)"
+        )
+    return True, "ok"
+
+
+def manifest_skill_dicts_for_prompt(skills: Sequence[SkillDescriptor]) -> list[dict[str, str]]:
+    """Compact rows suitable for logging or prompt injection."""
+    return [
+        {
+            "name": s.name or "",
+            "path": s.path_posix,
+            "description": (s.description or "")[:500],
+        }
+        for s in skills
+    ]
+
+
+def skill_descriptors_as_json_serializable(
+    skills: Sequence[SkillDescriptor],
+) -> list[dict[str, Any]]:
+    """Convert descriptors to plain dicts (paths as strings) for JSON APIs."""
+    return [
+        {
+            "path": s.path_posix,
+            "name": s.name,
+            "description": s.description,
+            "frontmatter": s.frontmatter,
+        }
+        for s in skills
+    ]
+
+
+__all__ = [
+    "DEFAULT_SKILL_SEARCH_ROOTS",
+    "SkillDescriptor",
+    "build_skill_index_markdown",
+    "build_manifest_payload",
+    "discover_skills",
+    "iter_skill_paths",
+    "load_manifest",
+    "load_skill_descriptor",
+    "manifest_matches_discovery",
+    "manifest_skill_dicts_for_prompt",
+    "skill_descriptors_as_json_serializable",
+    "split_yaml_frontmatter",
+    "write_skill_manifest",
+]

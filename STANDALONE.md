@@ -6,7 +6,7 @@
 ## Publication identity
 
 - Standalone repository: [docxology/template_methods_paper](https://github.com/docxology/template_methods_paper)
-- Config version: `1.0.0`
+- Intended / published version: `2.0.0 pending; last published 1.0.0`
 - Stable concept DOI: [10.5281/zenodo.21086548](https://doi.org/10.5281/zenodo.21086548)
 - Latest deposited version DOI: [10.5281/zenodo.21086549](https://zenodo.org/records/21086549)
 - Additional declared locations: [github_pages](https://docxology.github.io/template_methods_paper/), [huggingface_hub](https://huggingface.co/datasets/ActiveInference/template_methods_paper), [ipfs_pinata](https://gateway.pinata.cloud/ipfs/Qmc9puHs6KiEnCraVgWUXVxcyAZyT7nt9EMXXLBhy2bAou), [netlify](https://6a444b88aa6e4e3c5d216e16--tranquil-kleicha-0c9203.netlify.app), [osf](https://osf.io/6d7nh/), [pypi](https://test.pypi.org/project/template-methods-paper/1.0.0/), [software_heritage](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/docxology/template_methods_paper)
@@ -20,7 +20,7 @@ Additional locations are config-declared publication evidence; the central index
 
 `template_methods_paper` is the canonical methods-paper exemplar: a small,
 tested domain language for specifying controlled methods
-(`src/methods_dsl/`), a thin analysis script, and a manuscript whose subject
+(`src/template_methods_paper/methods_dsl/`), a thin analysis script, and a manuscript whose subject
 is the methodology itself rather than results from running it.
 
 ## Copy This When
@@ -54,9 +54,9 @@ rsync -a \
 
 - Update `manuscript/config.yaml`, `domain_profile.yaml`, `experiment_plan.yaml`,
   `CITATION.cff`, `.zenodo.json`, `codemeta.json`, and `pyproject.toml`.
-- Replace or extend the controlled vocabulary in `src/methods_dsl/units.py`
+- Replace or extend the controlled vocabulary in `src/template_methods_paper/methods_dsl/units.py`
   and `vocabulary.py` to match your domain's units and step kinds.
-- Replace `src/methods_dsl/examples_methods.py`'s worked examples with your
+- Replace `src/template_methods_paper/methods_dsl/examples_methods.py`'s worked examples with your
   own methods, and update their tests.
 - Re-run `scripts/methods_analysis.py` and regenerate manuscript claims
   before publishing — every `{{TOKEN}}` in the manuscript is sourced from
@@ -82,7 +82,7 @@ uv run pytest projects/templates/template_methods_paper/tests \
 
 ## Standalone By Design
 
-`src/methods_dsl/` is standalone except one sanctioned exception: the
+`src/template_methods_paper/methods_dsl/` is standalone except one sanctioned exception: the
 logging adapter (`_logging.py`) reaches into the repository's unified
 logging system, declared in `manuscript/layer_contract.yaml`. Every other
 module imports only the Python standard library, so the DSL itself is

@@ -1,0 +1,327 @@
+"""Single-source-of-truth stage-table generation.
+
+The canonical pipeline definition lives in
+``infrastructure/core/pipeline/pipeline.yaml``. Several Markdown files
+(``README.md``, ``.github/README.md``, ``scripts/AGENTS.md``,
+``docs/RUN_GUIDE.md``, ``docs/core/workflow.md``) used to hand-maintain a
+copy of the same stage table. This module renders that table from the
+YAML and injects it between
+``<!-- BEGIN:STAGE_TABLE -->`` / ``<!-- END:STAGE_TABLE -->`` markers,
+reusing :func:`infrastructure.documentation.glossary_gen.inject_between_markers`.
+
+The public entry points are:
+
+* :func:`build_stage_table` — render a Markdown table from the YAML.
+* :func:`build_stage_summary` — declared / default core / explicitly selected live counts.
+* :func:`inject_stage_table` — replace a marked block in a Markdown file.
+
+The generator is **idempotent**: running it twice with no YAML change makes
+no diff. The "Stage" column reflects the 0-based position of each stage in
+the YAML; this index intentionally does **not** match the ``stage_NN_*.py``
+numeric prefixes used by the canonical script filenames under
+``scripts/pipeline/`` (e.g. stage 11, "Copy Outputs", runs
+``scripts/pipeline/stage_05_copy.py``). The caption notes this caveat
+explicitly so historical pitfalls are not re-introduced.
+"""
+
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+from infrastructure.core.logging.utils import get_logger
+from infrastructure.core.pipeline.dag import opt_in_tags_from_mapping
+from infrastructure.core.pipeline.stage_vocabulary import (
+    all_stage_names,
+    core_stage_names,
+    live_stage_names,
+)
+from infrastructure.documentation.glossary_gen import inject_between_markers
+
+logger = get_logger(__name__)
+
+
+#: Canonical set of Markdown files that embed the stage table.
+DEFAULT_STAGE_TABLE_TARGETS = (
+    "README.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/README.md",
+    "scripts/AGENTS.md",
+    "docs/RUN_GUIDE.md",
+    "docs/core/workflow.md",
+)
+
+
+_DEFAULT_FAILURE_MODES: dict[str, str] = {
+    "core": "hard fail",
+    "llm": "fresh policy-bound skip; unavailable required live acceptance is blocked",
+    "live": "unavailable required live acceptance is blocked",
+    "clean": "failure prevents completion",
+    "tests": "required tests and coverage must pass",
+}
+
+
+_PIPELINE_YAML_REL = "infrastructure/core/pipeline/pipeline.yaml"
+
+
+@dataclass(frozen=True)
+class StageTableRefreshResult:
+    """Deterministic stage-table refresh outcome."""
+
+    changed: tuple[Path, ...]
+    unchanged: tuple[Path, ...]
+    write: bool
+
+
+def refresh_stage_tables(
+    repo_root: Path,
+    *,
+    targets: tuple[str | Path, ...] | list[str | Path] | None = None,
+    yaml_path: Path | None = None,
+    write: bool = False,
+) -> StageTableRefreshResult:
+    """Render and optionally update every requested stage-table document."""
+    source = yaml_path or repo_root / _PIPELINE_YAML_REL
+    changed: list[Path] = []
+    unchanged: list[Path] = []
+    for raw_target in targets or list(DEFAULT_STAGE_TABLE_TARGETS):
+        relative = Path(raw_target)
+        target = relative if relative.is_absolute() else repo_root / relative
+        if not target.exists():
+            raise FileNotFoundError(f"Markdown target not found: {target}")
+        target_rel = target.relative_to(repo_root) if target.is_relative_to(repo_root) else target
+        table = build_stage_table(source, target_rel_to_repo=target_rel, repo_root=repo_root)
+        summary = build_stage_summary(source, target_rel_to_repo=target_rel)
+        if write:
+            changed_table = inject_stage_table(target, table)
+            changed_summary = inject_stage_table(target, summary, marker="STAGE_SUMMARY")
+            changed_now = changed_table or changed_summary
+        else:
+            current = target.read_text(encoding="utf-8")
+            proposed = inject_between_markers(
+                current,
+                "<!-- BEGIN:STAGE_TABLE -->",
+                "<!-- END:STAGE_TABLE -->",
+                table,
+            )
+            proposed = inject_between_markers(
+                proposed,
+                "<!-- BEGIN:STAGE_SUMMARY -->",
+                "<!-- END:STAGE_SUMMARY -->",
+                summary,
+            )
+            changed_now = proposed != current
+        (changed if changed_now else unchanged).append(target)
+    return StageTableRefreshResult(tuple(changed), tuple(unchanged), write)
+
+
+def _stage_table_caption(yaml_link: str) -> str:
+    """Return the standard caption line, embedding *yaml_link* as the YAML href."""
+    return (
+        "<!-- This block is generated from "
+        f"[`{_PIPELINE_YAML_REL}`]({yaml_link}) "
+        "by `scripts/docgen/stage_table.py`. Do not hand-edit. "
+        "Stage indices are **0-based positions in the YAML** and intentionally do "
+        "**not** match the `scripts/pipeline/stage_NN_*.py` numeric prefixes "
+        '(for example, stage 11, "Copy Outputs", runs `scripts/pipeline/stage_05_copy.py`). -->'
+    )
+
+
+# Default caption used for documentation outside the repository root.
+_STAGE_TABLE_CAPTION = _stage_table_caption(f"../{_PIPELINE_YAML_REL}")
+
+
+def _yaml_href(target_rel_to_repo: Path | None) -> str:
+    """Relative Markdown href from a target file back to ``pipeline.yaml``."""
+    if target_rel_to_repo is None:
+        return f"../{_PIPELINE_YAML_REL}"
+    depth = len(Path(target_rel_to_repo).parts) - 1
+    prefix = "../" * depth if depth > 0 else ""
+    return f"{prefix}{_PIPELINE_YAML_REL}"
+
+
+def build_stage_summary(
+    yaml_path: Path,
+    *,
+    target_rel_to_repo: Path | None = None,
+) -> str:
+    """Render declared, default core, and explicitly selected live counts."""
+    if not yaml_path.exists():
+        raise FileNotFoundError(f"pipeline.yaml not found: {yaml_path}")
+    raw = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(raw, dict) or "stages" not in raw:
+        raise ValueError(f"pipeline.yaml must have a top-level 'stages' list: {yaml_path}")
+    declared = len(all_stage_names(yaml_path=yaml_path))
+    live_count = len(live_stage_names(yaml_path=yaml_path))
+    core_count = len(core_stage_names(yaml_path=yaml_path))
+    last_index = max(declared - 1, 0)
+    opt_in = ", ".join(f"`{tag}`" for tag in sorted(opt_in_tags_from_mapping(raw)))
+    opt_in_clause = ""
+    if opt_in:
+        opt_in_clause = f" Opt-in tags ({opt_in}) stay out of these selections unless a stage is invoked directly."
+    href = _yaml_href(target_rel_to_repo)
+    return (
+        f"The default [`pipeline.yaml`]({href}) declares **{declared} named stages** "
+        f"(indices 0–{last_index}). Default `--mode core` runs execute **{core_count}** stages; "
+        f"explicit `--mode live` executes **{live_count}** selected core and live stages.{opt_in_clause} "
+        "YAML stage indices do not match `stage_NN_*.py` prefixes."
+    )
+
+
+def _default_failure_mode(tags: list[str]) -> str:
+    """Pick a sensible default failure-mode label from a stage's tags."""
+    for tag in ("clean", "llm", "live", "tests", "core"):
+        if tag in tags:
+            return _DEFAULT_FAILURE_MODES[tag]
+    return "—"
+
+
+def _render_script_cell(stage: dict[str, object]) -> str:
+    """Render the "Script" column for a single stage entry."""
+    script = stage.get("script")
+    method = stage.get("method")
+    args = stage.get("args") or []
+    if isinstance(script, str) and script:
+        if isinstance(args, list) and args:
+            return f"`{script} {' '.join(str(a) for a in args)}`"
+        return f"`{script}`"
+    if isinstance(method, str) and method:
+        return f"built-in `{method}`"
+    return "—"
+
+
+def _render_tags_cell(tags: list[str]) -> str:
+    if not tags:
+        return "—"
+    return ", ".join(f"`{t}`" for t in tags)
+
+
+def build_stage_table(
+    yaml_path: Path,
+    *,
+    target_rel_to_repo: Path | None = None,
+    repo_root: Path | None = None,
+) -> str:
+    """Render a Markdown stage table from ``pipeline.yaml``.
+
+    The returned string is a fenced HTML caption followed by a four-column
+    Markdown table: ``Stage | Script | Tags | Failure mode``. Stage indices
+    are 0-based positions in the YAML. The number and identity of stages are
+    derived from that declaration rather than repeated in this generator.
+
+    Args:
+        yaml_path: Path to ``pipeline.yaml``.
+        target_rel_to_repo: Optional Markdown target path (relative to the
+            repo root). Used to compute a correct relative URL for the
+            ``pipeline.yaml`` link in the caption. When ``None``, the caption
+            assumes a document one directory below the root.
+        repo_root: Optional repo-root path, only used when *target_rel_to_repo*
+            is provided.
+
+    Returns:
+        The rendered Markdown block (no surrounding marker comments).
+
+    Raises:
+        FileNotFoundError: If ``yaml_path`` does not exist.
+        ValueError: If the YAML lacks a top-level ``stages`` list.
+    """
+    if not yaml_path.exists():
+        raise FileNotFoundError(f"pipeline.yaml not found: {yaml_path}")
+
+    raw = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict) or "stages" not in raw:
+        raise ValueError(f"pipeline.yaml must have a top-level 'stages' list: {yaml_path}")
+
+    stages = raw["stages"]
+    if not isinstance(stages, list):
+        raise ValueError(f"pipeline.yaml 'stages' must be a list: {yaml_path}")
+
+    if target_rel_to_repo is not None:
+        # Compute a correct relative URL from the target back to pipeline.yaml.
+        depth = len(Path(target_rel_to_repo).parts) - 1  # parts above the file
+        prefix = "../" * depth if depth > 0 else ""
+        caption = _stage_table_caption(f"{prefix}{_PIPELINE_YAML_REL}")
+    else:
+        caption = _STAGE_TABLE_CAPTION
+
+    lines: list[str] = [
+        caption,
+        "",
+        "| Stage | Script | Tags | Failure mode |",
+        "| ----- | ------ | ---- | ------------ |",
+    ]
+
+    for index, entry in enumerate(stages):
+        if not isinstance(entry, dict):
+            raise ValueError(f"pipeline.yaml stage at index {index} is not a mapping")
+        name = str(entry.get("name", ""))
+        tags_raw = entry.get("tags", []) or []
+        tags = [str(t) for t in tags_raw] if isinstance(tags_raw, list) else []
+        failure_mode = entry.get("failure_mode")
+        if not isinstance(failure_mode, str) or not failure_mode.strip():
+            failure_mode = _default_failure_mode(tags)
+        lines.append(
+            f"| **{index}** {name} | {_render_script_cell(entry)} | {_render_tags_cell(tags)} | {failure_mode} |"
+        )
+
+    return "\n".join(lines)
+
+
+def inject_stage_table(
+    markdown_path: Path,
+    table: str,
+    marker: str = "STAGE_TABLE",
+) -> bool:
+    """Replace the stage-table block inside ``markdown_path``.
+
+    Looks for ``<!-- BEGIN:{marker} -->`` and ``<!-- END:{marker} -->`` and
+    replaces the content between them with ``table``. If the markers are not
+    found, a new block is appended (matching the behaviour of
+    :func:`infrastructure.documentation.glossary_gen.inject_between_markers`).
+
+    The write is idempotent: if the rendered content matches what is already
+    in the file, no write is performed.
+
+    Args:
+        markdown_path: Markdown file to mutate.
+        table: Markdown block to inject (no marker comments).
+        marker: Marker label used in ``<!-- BEGIN:{marker} -->`` /
+            ``<!-- END:{marker} -->``. Defaults to ``"STAGE_TABLE"``.
+
+    Returns:
+        ``True`` if the file was changed on disk, ``False`` otherwise.
+    """
+    if not markdown_path.exists():
+        raise FileNotFoundError(f"Markdown target not found: {markdown_path}")
+
+    begin = f"<!-- BEGIN:{marker} -->"
+    end = f"<!-- END:{marker} -->"
+
+    text = markdown_path.read_text(encoding="utf-8")
+    new_text = inject_between_markers(text, begin, end, table)
+
+    if new_text == text:
+        logger.debug(f"Stage table up-to-date: {markdown_path}")
+        return False
+
+    _tmp = markdown_path.with_suffix(markdown_path.suffix + ".tmp")
+    try:
+        _tmp.write_text(new_text, encoding="utf-8")
+        _tmp.replace(markdown_path)
+    except OSError:
+        _tmp.unlink(missing_ok=True)
+        raise
+
+    logger.info(f"Updated stage table in {markdown_path}")
+    return True
+
+
+__all__ = [
+    "DEFAULT_STAGE_TABLE_TARGETS",
+    "StageTableRefreshResult",
+    "build_stage_summary",
+    "build_stage_table",
+    "inject_stage_table",
+    "refresh_stage_tables",
+]

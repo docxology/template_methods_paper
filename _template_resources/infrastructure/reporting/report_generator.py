@@ -1,0 +1,148 @@
+"""Test report generation and persistence.
+
+Generates structured test reports from infrastructure and project test results,
+and saves them in JSON and Markdown formats.
+"""
+
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping
+
+from infrastructure.core.logging.utils import get_logger
+
+from .coverage_json_parser import parse_coverage_json
+
+logger = get_logger(__name__)
+
+
+def _report_timestamp() -> str:
+    """Return a reproducible timestamp for generated test reports."""
+    raw_epoch = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
+    if not raw_epoch:
+        return "1970-01-01T00:00:00+00:00 (SOURCE_DATE_EPOCH unset)"
+    try:
+        epoch = int(raw_epoch)
+    except ValueError:
+        return "1970-01-01T00:00:00+00:00 (invalid SOURCE_DATE_EPOCH)"
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat(timespec="seconds")
+
+
+def generate_test_report(
+    infra_results: Mapping[str, Any],
+    project_results: Mapping[str, Any],
+    repo_root: Path,
+    include_coverage_details: bool = True,
+    include_infrastructure_coverage: bool = True,
+    *,
+    project_root: Path | None = None,
+) -> dict[str, Any]:
+    """Generate structured test report from infrastructure and project test results.
+
+    ``coverage_infra.json`` is repository-scoped, so a project-only run can
+    otherwise accidentally ingest stale infrastructure coverage left by an
+    earlier command. Callers should set ``include_infrastructure_coverage``
+    according to the phases executed for the current report. When
+    ``project_root`` is supplied, only its CI-uploadable
+    ``coverage_project.json`` is eligible; absence fails closed instead of
+    falling back to stale evidence from a different project. Callers without
+    project identity retain the legacy repository-root location.
+    """
+    report: dict[str, Any] = {
+        "timestamp": _report_timestamp(),
+        "infrastructure": infra_results,
+        "project": project_results,
+        "summary": {
+            "total_passed": infra_results.get("passed", 0) + project_results.get("passed", 0),
+            "total_failed": infra_results.get("failed", 0) + project_results.get("failed", 0),
+            "total_skipped": infra_results.get("skipped", 0) + project_results.get("skipped", 0),
+            "total_tests": infra_results.get("total", 0) + project_results.get("total", 0),
+            "all_passed": (infra_results.get("exit_code", 0) == 0 and project_results.get("exit_code", 1) == 0),
+        },
+    }
+
+    # Add coverage summary
+    if "coverage_percent" in infra_results:
+        report["summary"]["infrastructure_coverage"] = infra_results["coverage_percent"]
+    if "coverage_percent" in project_results:
+        report["summary"]["project_coverage"] = project_results["coverage_percent"]
+
+    # Add detailed coverage information if requested
+    if include_coverage_details:
+        coverage_details = {}
+
+        # Try to read infrastructure coverage details
+        if include_infrastructure_coverage:
+            infra_coverage_json = repo_root / "coverage_infra.json"
+            infra_coverage = parse_coverage_json(infra_coverage_json)
+            if infra_coverage:
+                coverage_details["infrastructure"] = infra_coverage
+
+        # Try to read project coverage details
+        project_coverage_json = (
+            project_root / "coverage_project.json" if project_root is not None else repo_root / "coverage_project.json"
+        )
+        project_coverage = parse_coverage_json(project_coverage_json)
+        if project_coverage:
+            coverage_details["project"] = project_coverage
+
+        if coverage_details:
+            report["coverage_details"] = coverage_details
+
+    return report
+
+
+def save_test_report_to_files(report: dict[str, Any], output_dir: Path) -> tuple[Path, Path]:
+    """Save test report to JSON and generate Markdown summary.
+
+    Args:
+        report: Test report dictionary
+        output_dir: Output directory path (will be created if needed)
+
+    Returns:
+        Tuple of (json_path, md_path) for the saved files
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save JSON report
+    json_path = output_dir / "test_results.json"
+    try:
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2, ensure_ascii=False)
+    except OSError as e:
+        logger.error(f"Failed to write test report JSON: {e}")
+        raise
+
+    logger.info(f"Test report saved: {json_path}")
+
+    # Generate markdown summary
+    md_path = output_dir / "test_results.md"
+    try:
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write("# Test Results Summary\n\n")
+            f.write(f"Generated: {report['timestamp']}\n\n")
+            f.write("## Infrastructure Tests\n\n")
+            f.write(f"- Passed: {report['infrastructure'].get('passed', 0)}\n")
+            f.write(f"- Failed: {report['infrastructure'].get('failed', 0)}\n")
+            f.write(f"- Skipped: {report['infrastructure'].get('skipped', 0)}\n")
+            if "coverage_percent" in report["infrastructure"]:
+                f.write(f"- Coverage: {report['infrastructure']['coverage_percent']:.2f}%\n")
+            f.write("\n## Project Tests\n\n")
+            f.write(f"- Passed: {report['project'].get('passed', 0)}\n")
+            f.write(f"- Failed: {report['project'].get('failed', 0)}\n")
+            f.write(f"- Skipped: {report['project'].get('skipped', 0)}\n")
+            if "coverage_percent" in report["project"]:
+                f.write(f"- Coverage: {report['project']['coverage_percent']:.2f}%\n")
+            f.write("\n## Summary\n\n")
+            f.write(f"- Total Passed: {report['summary']['total_passed']}\n")
+            f.write(f"- Total Failed: {report['summary']['total_failed']}\n")
+            f.write(f"- Total Tests: {report['summary']['total_tests']}\n")
+            f.write(f"- Status: {'✅ PASSED' if report['summary']['all_passed'] else '❌ FAILED'}\n")
+    except OSError as e:
+        logger.error(f"Failed to write test report markdown: {e}")
+        raise
+
+    logger.info(f"Test summary saved: {md_path}")
+
+    return (json_path, md_path)

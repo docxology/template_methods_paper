@@ -1,0 +1,155 @@
+"""Canonical pipeline stage names and alias matching from pipeline.yaml."""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from pathlib import Path
+
+import yaml
+
+
+def _load_opt_in_tags() -> frozenset[str]:
+    """Read the opt-in tag set from pipeline.yaml, the single declaration of it."""
+    from infrastructure.core.pipeline.dag import load_opt_in_tags
+
+    path = Path(__file__).resolve().parent / "pipeline.yaml"
+    try:
+        return load_opt_in_tags(path)
+    except (OSError, yaml.YAMLError):  # pragma: no cover - a broken DAG fails elsewhere
+        return frozenset()
+
+
+_OPT_IN_TAGS = _load_opt_in_tags()
+
+# Informal tokens → canonical stage name (from pipeline.yaml + single_stage.py keys).
+_STAGE_ALIAS_TO_CANONICAL: dict[str, str] = {
+    "clean": "Clean Output Directories",
+    "setup": "Environment Setup",
+    "infra_tests": "Infrastructure Tests",
+    "project_tests": "Project Tests",
+    "tests": "Infrastructure Tests",
+    "analysis": "Project Analysis",
+    "project analysis": "Project Analysis",
+    "render": "PDF Rendering",
+    "render_pdf": "PDF Rendering",
+    "pdf rendering": "PDF Rendering",
+    "validate": "Output Validation",
+    "output validation": "Output Validation",
+    "copy": "Copy Outputs",
+    "llm_reviews": "LLM Manuscript Review",
+    "llm_translations": "LLM Translations",
+}
+
+_SCRIPT_TO_CANONICAL: dict[str, str] = {
+    "stage_00_setup.py": "Environment Setup",
+    "stage_01_test.py": "Project Tests",
+    "stage_02_analysis.py": "Project Analysis",
+    "stage_03_render.py": "PDF Rendering",
+    "stage_04_validate.py": "Output Validation",
+    "stage_05_copy.py": "Copy Outputs",
+    "stage_06_llm_review.py": "LLM Manuscript Review",
+}
+
+
+def _default_pipeline_yaml() -> Path:
+    return Path(__file__).resolve().parent / "pipeline.yaml"
+
+
+@lru_cache(maxsize=4)
+def _load_stage_entries(yaml_path: str) -> tuple[dict[str, object], ...]:
+    path = Path(yaml_path)
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    stages = data.get("stages") or []
+    return tuple(stages)
+
+
+def all_stage_names(*, yaml_path: Path | None = None) -> tuple[str, ...]:
+    """Ordered stage names from pipeline.yaml."""
+    path = yaml_path or _default_pipeline_yaml()
+    return tuple(str(s["name"]) for s in _load_stage_entries(str(path)) if s.get("name"))
+
+
+def _opt_in_tags_for(yaml_path: Path) -> frozenset[str]:
+    """Return ``opt_in_tags`` from *yaml_path*, falling back to the default DAG."""
+    from infrastructure.core.pipeline.dag import load_opt_in_tags
+
+    try:
+        return load_opt_in_tags(yaml_path)
+    except (OSError, yaml.YAMLError):
+        return _OPT_IN_TAGS
+
+
+def live_stage_names(*, yaml_path: Path | None = None) -> tuple[str, ...]:
+    """Default live stages: excludes opt-in and paid tags."""
+    path = yaml_path or _default_pipeline_yaml()
+    opt_in = _opt_in_tags_for(path)
+    names: list[str] = []
+    for stage in _load_stage_entries(str(path)):
+        name = stage.get("name")
+        if not name:
+            continue
+        raw_tags = stage.get("tags")
+        tags = {str(tag) for tag in raw_tags} if isinstance(raw_tags, list) else set()
+        if tags & opt_in or "paid" in tags:
+            continue
+        names.append(str(name))
+    return tuple(names)
+
+
+def core_stage_names(*, yaml_path: Path | None = None) -> tuple[str, ...]:
+    """``--mode core`` stages: excludes opt-in, ``llm``, ``live`` and paid tags."""
+    path = yaml_path or _default_pipeline_yaml()
+    opt_in = _opt_in_tags_for(path)
+    names: list[str] = []
+    for stage in _load_stage_entries(str(path)):
+        name = stage.get("name")
+        if not name:
+            continue
+        raw_tags = stage.get("tags")
+        tags = {str(tag) for tag in raw_tags} if isinstance(raw_tags, list) else set()
+        if tags & opt_in or tags & {"llm", "live", "paid"}:
+            continue
+        names.append(str(name))
+    return tuple(names)
+
+
+def default_run_stage_count(*, mode: str = "core", yaml_path: Path | None = None) -> int:
+    """Stage count for the default full run or ``--mode core``."""
+    if mode not in {"core", "live"}:
+        raise ValueError("Execution mode must be core or live")
+    if mode == "live":
+        return len(live_stage_names(yaml_path=yaml_path))
+    return len(core_stage_names(yaml_path=yaml_path))
+
+
+def menu_stage_names(*, yaml_path: Path | None = None) -> tuple[str, ...]:
+    """Stages shown in run.sh menu banners (excludes Clean Output Directories)."""
+    return tuple(n for n in live_stage_names(yaml_path=yaml_path) if n != "Clean Output Directories")
+
+
+def stage_aliases() -> dict[str, str]:
+    """Map informal tokens to canonical stage labels."""
+    aliases = dict(_STAGE_ALIAS_TO_CANONICAL)
+    for name in live_stage_names():
+        aliases[name.lower()] = name
+    return aliases
+
+
+def text_mentions_stage(text: str, canonical_name: str) -> bool:
+    """True when *text* references *canonical_name* by label, alias, or script."""
+    lower = text.lower()
+    canonical_lower = canonical_name.lower()
+    if canonical_lower in lower:
+        return True
+    for alias, target in stage_aliases().items():
+        if target.lower() == canonical_lower and alias in lower:
+            return True
+    for script, target in _SCRIPT_TO_CANONICAL.items():
+        if target.lower() == canonical_lower and script in lower:
+            return True
+    return False
+
+
+def text_mentions_any_stage(text: str) -> bool:
+    """True when text references any canonical core stage."""
+    return any(text_mentions_stage(text, name) for name in live_stage_names())

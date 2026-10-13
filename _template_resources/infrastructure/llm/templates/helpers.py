@@ -1,0 +1,159 @@
+"""Helper functions for prompt template generation."""
+
+from collections.abc import Mapping
+
+from infrastructure.core.logging.utils import get_logger
+
+logger = get_logger(__name__)
+
+
+def format_requirements(
+    required_headers: list[str],
+    markdown_format: bool = True,
+    section_requirements: Mapping[str, str | None] | None = None,
+) -> str:
+    """Return a FORMAT REQUIREMENTS block for injection into LLM prompts.
+
+    Instructs the model to use markdown headers from ``required_headers`` in
+    order. Pass ``section_requirements`` to add per-section constraints (e.g.,
+    minimum word counts). Omit ``markdown_format=False`` for plain-text outputs.
+    """
+    lines = ["FORMAT REQUIREMENTS:"]
+
+    if markdown_format:
+        lines.append("1. Use markdown formatting with proper headers")
+        lines.append("2. Include these exact section headers (in order):")
+        for header in required_headers:
+            lines.append(f"   {header}")
+
+    if section_requirements:
+        lines.append("3. Section-specific requirements:")
+        for section, req in section_requirements.items():
+            lines.append(f"   - {section}: {req}")
+
+    return "\n".join(lines)
+
+
+def token_budget_awareness(
+    total_tokens: int | None = None,
+    section_budgets: dict[str, int] | None = None,
+    word_targets: dict[str, tuple[int, int]] | None = None,
+) -> str:
+    """Return a TOKEN BUDGET AWARENESS block for injection into LLM prompts.
+
+    Tells the model how much output to produce. Use ``total_tokens`` for an
+    overall cap, ``section_budgets`` for per-section token allocations, and
+    ``word_targets`` for (min, max) word-count ranges per section.
+    """
+    lines = ["TOKEN BUDGET AWARENESS:"]
+
+    if total_tokens:
+        lines.append(f"1. Total response budget: approximately {total_tokens} tokens")
+        lines.append("   (Plan your response to stay within this limit)")
+
+    if section_budgets:
+        lines.append("2. Approximate token budgets per section:")
+        for section, budget in section_budgets.items():
+            lines.append(f"   - {section}: ~{budget} tokens")
+
+    if word_targets:
+        lines.append("3. Word count targets per section:")
+        for section, (min_words, max_words) in word_targets.items():
+            lines.append(f"   - {section}: {min_words}-{max_words} words")
+
+    return "\n".join(lines)
+
+
+def content_requirements(
+    no_hallucination: bool = True,
+    cite_sources: bool = True,
+    evidence_based: bool = True,
+    no_meta_commentary: bool = True,
+) -> str:
+    """Return a CONTENT QUALITY REQUIREMENTS block for injection into LLM prompts.
+
+    Each flag enables one quality constraint: ``no_hallucination`` restricts the
+    model to information in the provided content, ``cite_sources`` requires quoting
+    specific passages, ``evidence_based`` demands reasoned claims, and
+    ``no_meta_commentary`` suppresses AI self-references.
+    """
+    lines = ["CONTENT QUALITY REQUIREMENTS:"]
+
+    if no_hallucination:
+        lines.append(
+            "1. NO HALLUCINATION: Only discuss information explicitly present in the provided content"  # noqa: E501
+        )
+        lines.append("   - Do NOT add external knowledge, assumptions, or invented details")
+        lines.append("   - Do NOT reference sources not mentioned in the provided content")
+
+    if cite_sources:
+        lines.append("2. CITE SOURCES: Reference specific sections, passages, or elements from the content")
+        lines.append("   - Quote or paraphrase actual text when making observations")
+        lines.append("   - Use specific section titles or page references when available")
+
+    if evidence_based:
+        lines.append("3. EVIDENCE-BASED: Base all claims on evidence from the provided content")
+        lines.append("   - Support observations with specific examples")
+        lines.append("   - Explain reasoning with reference to actual content")
+
+    if no_meta_commentary:
+        lines.append(
+            "4. NO META-COMMENTARY: Do not mention being an AI, assistant, or that this is generated content"  # noqa: E501
+        )
+        lines.append("   - Write as if you are a human expert reviewer")
+        lines.append("   - Use professional, academic tone throughout")
+
+    return "\n".join(lines)
+
+
+def section_structure(
+    sections: list[str],
+    section_descriptions: Mapping[str, str | None] | None = None,
+    required_order: bool = True,
+) -> str:
+    """Return a SECTION STRUCTURE block for injection into LLM prompts.
+
+    Lists the required sections and optional per-section descriptions. Set
+    ``required_order=False`` if the model may reorder sections; the default
+    enforces exact ordering.
+    """
+    lines = ["SECTION STRUCTURE:"]
+
+    if required_order:
+        lines.append("1. Sections must appear in this exact order:")
+    else:
+        lines.append("1. Include these sections:")
+
+    for i, section in enumerate(sections, 1):
+        if section_descriptions and section in section_descriptions:
+            lines.append(f"   {i}. {section}: {section_descriptions[section]}")
+        else:
+            lines.append(f"   {i}. {section}")
+
+    return "\n".join(lines)
+
+
+def validation_hints(
+    word_count_range: tuple[int, int] | None = None,
+    required_elements: list[str] | None = None,
+    format_checks: list[str] | None = None,
+) -> str:
+    """Generate validation hints that inform the model what will be checked."""
+    sections: list[list[str]] = []
+
+    if word_count_range:
+        min_words, max_words = word_count_range
+        sections.append([f"Word count: Must be between {min_words} and {max_words} words"])
+
+    if required_elements:
+        sections.append(["Required elements:"] + [f"   - {e}" for e in required_elements])
+
+    if format_checks:
+        sections.append(["Format compliance checks:"] + [f"   - {c}" for c in format_checks])
+
+    lines = ["VALIDATION HINTS (what will be checked):"]
+    for n, section in enumerate(sections, 1):
+        lines.append(f"{n}. {section[0]}")
+        lines.extend(section[1:])
+
+    return "\n".join(lines)

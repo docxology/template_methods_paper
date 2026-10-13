@@ -1,0 +1,283 @@
+"""CLI interface for publishing operations.
+
+Thin orchestrator wrapping infrastructure.publishing module functionality.
+"""
+
+import argparse
+import os
+from collections.abc import Callable, Sequence
+from pathlib import Path
+
+from infrastructure.core.cli_scaffold import emit_schema
+from infrastructure.core.logging.utils import get_logger
+
+from .zenodo import ZenodoClient, ZenodoConfig
+from infrastructure.core.exceptions import PublishingError, UploadError
+from .citations import generate_citation_bibtex
+from .metadata import extract_publication_metadata
+
+logger = get_logger(__name__)
+
+
+def extract_metadata_command(args: argparse.Namespace) -> None:
+    """Extract and display publication metadata from manuscript files.
+
+    Scans the specified manuscript directory for markdown files and extracts
+    publication metadata including title, authors, abstract, and keywords.
+    Results are printed to stdout.
+
+    Args:
+        args: Argparse namespace containing:
+            - manuscript_dir (str): Path to directory containing markdown files.
+
+    Returns:
+        None. Prints metadata to stdout.
+
+    Raises:
+        SystemExit: If the directory does not exist or contains no markdown files.
+    """
+    manuscript_dir = Path(args.manuscript_dir)
+
+    if not manuscript_dir.exists():
+        logger.error(f"Directory not found: {manuscript_dir}")
+        raise SystemExit(1)
+
+    logger.info(f"Extracting metadata from: {manuscript_dir}")
+    md_files = list(manuscript_dir.glob("*.md"))
+
+    if not md_files:
+        logger.error("No markdown files found")
+        raise SystemExit(1)
+
+    metadata = extract_publication_metadata(md_files)
+
+    print("\nMetadata:")
+    print(f"Title: {metadata.title}")
+    print(f"Authors: {', '.join(metadata.authors)}")
+    print(f"Abstract: {metadata.abstract[:200]}..." if metadata.abstract else "Abstract: N/A")
+    print(f"Keywords: {', '.join(metadata.keywords)}")
+
+
+def generate_citation_command(args: argparse.Namespace) -> None:
+    """Generate a BibTeX citation from manuscript metadata.
+
+    Extracts metadata from manuscript markdown files and generates a citation.
+    Currently only BibTeX format is implemented. The citation is printed
+    to stdout for easy copying or redirection.
+
+    Args:
+        args: Argparse namespace containing:
+            - manuscript_dir (str): Path to directory containing markdown files.
+            - format (str): Citation format (only 'bibtex' is supported).
+
+    Returns:
+        None. Prints the formatted citation to stdout.
+
+    Raises:
+        SystemExit: If the directory does not exist, contains no markdown files,
+            or if an unsupported format is requested.
+    """
+    manuscript_dir = Path(args.manuscript_dir)
+
+    if not manuscript_dir.exists():
+        logger.error(f"Directory not found: {manuscript_dir}")
+        raise SystemExit(1)
+
+    md_files = list(manuscript_dir.glob("*.md"))
+    if not md_files:
+        logger.error("No markdown files found")
+        raise SystemExit(1)
+
+    metadata = extract_publication_metadata(md_files)
+
+    if args.format == "bibtex":
+        citation = generate_citation_bibtex(metadata)
+    else:
+        logger.error(f"Unsupported format: {args.format}")
+        raise SystemExit(1)
+
+    print(citation)
+
+
+def publish_zenodo_command(
+    args: argparse.Namespace,
+    *,
+    config_factory: Callable[..., ZenodoConfig] = ZenodoConfig,
+) -> None:
+    """Upload and publish research outputs to Zenodo.
+
+    Finds all PDF files in the specified output directory and uploads them
+    to Zenodo as a new publication. Requires a valid Zenodo API token either
+    via command-line argument or ZENODO_TOKEN / ZENODO_PROD_TOKEN environment variable.
+
+    Args:
+        args: Argparse namespace containing:
+            - output_dir (str): Path to directory containing PDF files to upload.
+            - token (str, optional): Zenodo API token. Falls back to ZENODO_TOKEN, then
+              ZENODO_PROD_TOKEN (for compatibility with CredentialManager naming).
+            - title (str, optional): Publication title. Defaults to 'Research Publication'.
+            - authors (str, optional): Comma-separated author names.
+            - description (str, optional): Publication description text.
+            - sandbox (bool): Use Zenodo sandbox API (default True for safety).
+
+    Returns:
+        None. Prints the Zenodo record ID on success.
+
+    Raises:
+        SystemExit: If no token is available, directory does not exist,
+            no PDF files are found, or the upload fails.
+    """
+    # ZENODO_TOKEN is the simple single-token form used by this CLI command.
+    # For environment-specific tokens, CredentialManager uses ZENODO_PROD_TOKEN /
+    # ZENODO_SANDBOX_TOKEN instead. Fall back to ZENODO_PROD_TOKEN so both naming
+    # conventions work for production use.
+    token = args.token or os.getenv("ZENODO_PROD_TOKEN") or os.getenv("ZENODO_TOKEN")
+    if not token:
+        logger.error("Set ZENODO_PROD_TOKEN or ZENODO_TOKEN environment variable")
+        raise SystemExit(1)
+
+    output_dir = Path(args.output_dir)
+    if not output_dir.exists():
+        logger.error(f"Directory not found: {output_dir}")
+        raise SystemExit(1)
+
+    # Find PDFs
+    pdfs = list(output_dir.glob("**/*.pdf"))
+    if not pdfs:
+        logger.error("No PDF files found")
+        raise SystemExit(1)
+
+    use_sandbox = not getattr(args, "production", False)
+    env_label = "sandbox" if use_sandbox else "production"
+    logger.info(f"Publishing {len(pdfs)} files to Zenodo ({env_label})")
+    config = config_factory(access_token=token, sandbox=use_sandbox)
+    client = ZenodoClient(config=config)
+
+    # Build Zenodo-formatted metadata
+    zenodo_metadata = {
+        "upload_type": "publication",
+        "publication_type": "article",
+        "title": args.title or "Research Publication",
+        "creators": [
+            {"name": name.strip()} for name in (args.authors.split(",") if args.authors else ["Unknown Author"])
+        ],
+        "description": args.description or "Published research output",
+    }
+
+    try:
+        deposition = client.create_deposition(zenodo_metadata)
+        logger.info(f"Created Zenodo deposition: {deposition.deposition_id}")
+        for pdf in pdfs:
+            client.upload_file(deposition.bucket_url, str(pdf))
+            logger.info(f"Uploaded: {pdf.name}")
+        doi = client.publish(deposition.deposition_id)
+        print(f"Published successfully! DOI: {doi}")
+    except (PublishingError, UploadError) as e:
+        logger.error(f"Zenodo upload failed: {e}")
+        raise SystemExit(1) from e
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Create the argparse parser for the publishing CLI.
+
+    Extracted from :func:`main` so the parser can be introspected (e.g. by the
+    ``schema`` subcommand) without invoking the dispatch path. Behavior of every
+    existing subcommand and flag is preserved exactly.
+
+    Returns:
+        The fully configured :class:`argparse.ArgumentParser`.
+    """
+    parser = argparse.ArgumentParser(description="Publish research outputs to academic platforms.")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Extract metadata
+    meta_parser = subparsers.add_parser("extract-metadata", help="Extract metadata")
+    meta_parser.add_argument("manuscript_dir", help="Manuscript directory")
+    meta_parser.set_defaults(func=extract_metadata_command)
+
+    # Generate citation
+    cite_parser = subparsers.add_parser("generate-citation", help="Generate citation")
+    cite_parser.add_argument("manuscript_dir", help="Manuscript directory")
+    cite_parser.add_argument(
+        "--format",
+        choices=["bibtex"],  # Only bibtex is implemented; apa/mla are not yet supported
+        default="bibtex",
+        help="Citation format (only 'bibtex' is currently implemented)",
+    )
+    cite_parser.set_defaults(func=generate_citation_command)
+
+    # Publish to Zenodo
+    zenodo_parser = subparsers.add_parser("publish-zenodo", help="Publish to Zenodo")
+    zenodo_parser.add_argument("output_dir", help="Output directory with files")
+    zenodo_parser.add_argument("--token", help="Zenodo API token (or use ZENODO_TOKEN env)")
+    zenodo_parser.add_argument("--title", help="Publication title")
+    zenodo_parser.add_argument("--authors", help="Comma-separated author list")
+    zenodo_parser.add_argument("--description", help="Publication description")
+    zenodo_sandbox_group = zenodo_parser.add_mutually_exclusive_group()
+    zenodo_sandbox_group.add_argument(
+        "--sandbox",
+        dest="production",
+        action="store_false",
+        default=True,
+        help="Use Zenodo sandbox API (default; safe for testing)",
+    )
+    zenodo_sandbox_group.add_argument(
+        "--production",
+        dest="production",
+        action="store_true",
+        help="Use live Zenodo production API (publishes permanently)",
+    )
+    zenodo_parser.set_defaults(func=publish_zenodo_command)
+
+    # Schema (uniform machine-readable parameter contract)
+    schema_parser = subparsers.add_parser(
+        "schema",
+        help="Print this CLI's parameter schema as JSON and exit",
+    )
+    schema_parser.set_defaults(func=lambda _args: emit_schema(build_parser()))
+
+    return parser
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    command_overrides: dict[str, Callable[[argparse.Namespace], object]] | None = None,
+) -> int:
+    """Main CLI entry point for publishing operations.
+
+    Parses command-line arguments and dispatches to the appropriate
+    subcommand handler. Available commands:
+        - extract-metadata: Extract publication metadata from manuscript files.
+        - generate-citation: Generate a BibTeX citation.
+        - publish-zenodo: Upload and publish to Zenodo repository.
+        - schema: Print this CLI's parameter schema as JSON and exit.
+
+    Args:
+        argv: Optional argument vector (defaults to ``sys.argv[1:]``).
+
+    Returns:
+        Exit code 0 on success.
+
+    Raises:
+        SystemExit: If no command is specified or if the command fails.
+    """
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if command_overrides and args.command in command_overrides:
+        args.func = command_overrides[args.command]
+
+    if not hasattr(args, "func"):
+        parser.print_help()
+        raise SystemExit(1)
+
+    try:
+        result = args.func(args)
+    except Exception as e:
+        logger.error(f"Command failed: {e}")
+        raise SystemExit(1) from e
+    return int(result) if isinstance(result, int) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,306 @@
+"""Steganography post-processing wrapper.
+
+This module replaces the inline Python heredoc that previously lived in
+``secure_run.sh``. It dispatches to :mod:`infrastructure.steganography`
+rather than re-implementing any cryptographic logic.
+
+Public API:
+
+- :func:`run_secure_pipeline` — full ``secure_run.sh`` workflow
+  (pipeline + steganography post-processing).
+- :func:`apply_steganography_to_project` — process the PDFs of a single
+  project. Used standalone via ``--steganography-only``.
+"""
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from infrastructure.core.logging.utils import get_logger
+from infrastructure.core.files.serialization import load_yaml_mapping
+from infrastructure.orchestration.discovery import resolve_project_info, validate_project_slug
+from infrastructure.orchestration.pipeline_runner import (
+    PipelineInvocation,
+    PipelineRunner,
+)
+from infrastructure.project.discovery import discover_projects
+
+logger = get_logger(__name__)
+
+
+@dataclass
+class SecureRunOptions:
+    """Options accepted by :func:`run_secure_pipeline`."""
+
+    project: str | None = None
+    steganography_only: bool = False
+    skip_infra: bool = False
+    mode: str = "core"
+    resume: bool = False
+    validate_kmyth: bool = False
+
+
+def _load_steganography() -> tuple[Any, Any]:  # pragma: no cover - import indirection
+    """Lazy import to keep the orchestration package import-light.
+
+    The steganography module pulls in ``reportlab`` / ``qrcode``; we don't
+    want to pay for that on every CLI invocation.
+    """
+    from infrastructure.steganography import (
+        SteganographyConfig,
+        SteganographyProcessor,
+    )
+
+    return SteganographyConfig, SteganographyProcessor
+
+
+def _load_project_config(project_path: Path, *, strict: bool = False) -> dict[str, Any]:
+    """Load ``manuscript/config.yaml`` for the project, if present."""
+    return _load_yaml_mapping(project_path / "manuscript" / "config.yaml", strict=strict)
+
+
+def _load_yaml_mapping(path: Path, *, strict: bool = False) -> dict[str, Any]:
+    """Compatibility wrapper over the shared tolerant YAML loader."""
+    return load_yaml_mapping(path, strict=strict)
+
+
+def _load_repo_secure_config(repo_root: Path) -> dict[str, Any]:
+    """Load repository-wide secure defaults from ``infrastructure/config``."""
+    config = _load_yaml_mapping(repo_root / "infrastructure" / "config" / "secure_config.yaml")
+    steg = config.get("steganography", {})
+    return dict(steg) if isinstance(steg, dict) else {}
+
+
+def _effective_steganography_config(
+    repo_root: Path,
+    project_config: dict[str, Any],
+    *,
+    force_secure: bool = False,
+) -> dict[str, Any]:
+    """Merge steganography config with precedence: dataclass < repo < project."""
+    merged = _load_repo_secure_config(repo_root)
+    project_steg = project_config.get("steganography", {})
+    if isinstance(project_steg, dict):
+        merged.update(project_steg)
+    elif project_steg:
+        logger.warning("Ignoring non-mapping steganography config: %r", project_steg)
+    if force_secure:
+        # A secure run must not be downgraded by a per-project override. The
+        # hash manifest is the companion evidence that lets operators verify
+        # which source PDF was processed.
+        merged.update(enabled=True, hashing_enabled=True, manifest_enabled=True)
+    return merged
+
+
+def validate_kmyth_for_secure_run(repo_root: Path, project_qualified_name: str | None = None) -> int:
+    """Validate optional Kmyth availability for the secure-run configuration."""
+    project_config: dict[str, Any] = {}
+    if project_qualified_name is not None:
+        try:
+            project = resolve_project_info(project_qualified_name, repo_root)
+        except ValueError:
+            logger.error("Unknown project: %s", project_qualified_name)
+            return 1
+        try:
+            project_config = _load_project_config(project.path, strict=True)
+        except Exception as exc:  # noqa: BLE001 - secure validation fails closed
+            logger.error("Could not load secure config for %s: %s", project_qualified_name, exc)
+            return 1
+
+    SteganographyConfig, _ = _load_steganography()
+    steg_mapping = _effective_steganography_config(repo_root, project_config)
+    steg_config = SteganographyConfig.from_dict(steg_mapping)
+
+    from infrastructure.steganography import validate_kmyth_installation
+
+    availability = validate_kmyth_installation(
+        binary_dir=steg_config.kmyth_binary_dir,
+        source_dir=steg_config.kmyth_source_dir,
+    )
+    if availability.available:
+        logger.info(availability.summary())
+        return 0
+
+    logger.error(availability.summary())
+    return 1
+
+
+def apply_steganography_to_project(
+    repo_root: Path,
+    project_qualified_name: str,
+    *,
+    processor_factory: Any = None,
+    force_secure: bool = False,
+    strict_config: bool = False,
+) -> int:
+    """Apply steganography to all PDFs in a single project.
+
+    Args:
+        repo_root: Repository root.
+        project_qualified_name: Qualified project name (e.g. ``program/name``).
+        processor_factory: Optional factory ``(config) -> processor`` used by
+            tests. The default uses
+            :class:`infrastructure.steganography.SteganographyProcessor`.
+
+    Returns:
+        ``0`` on success, ``1`` on failure, ``2`` if no PDFs were found.
+    """
+    try:
+        project = resolve_project_info(project_qualified_name, repo_root)
+    except ValueError:
+        logger.error("Unknown project: %s", project_qualified_name)
+        return 1
+
+    pdf_dir = project.path / "output" / "pdf"
+    if not pdf_dir.exists():
+        pdf_dir = repo_root / "output" / project_qualified_name / "pdf"
+    if not pdf_dir.exists():
+        logger.warning("No PDF output directory for %s", project_qualified_name)
+        return 2
+
+    pdfs = [p for p in pdf_dir.glob("*.pdf") if "_steganography" not in p.stem]
+    if not pdfs:
+        logger.warning("No PDFs found in %s", pdf_dir)
+        return 2
+
+    try:
+        config_yaml = _load_project_config(project.path, strict=strict_config)
+    except Exception as exc:  # noqa: BLE001 - strict mode must fail closed
+        logger.error("Could not load secure config for %s: %s", project_qualified_name, exc)
+        return 1
+
+    paper = config_yaml.get("paper")
+    paper_mapping = paper if isinstance(paper, dict) else {}
+    raw_authors = config_yaml.get("authors")
+    author_mappings = (
+        [author for author in raw_authors if isinstance(author, dict)] if isinstance(raw_authors, list) else []
+    )
+    title = paper_mapping.get("title", project_qualified_name)
+    authors = [str(author.get("name", "")) for author in author_mappings]
+    author_emails = [str(author["email"]) for author in author_mappings if author.get("email")]
+    keywords = config_yaml.get("keywords", [])
+    if not isinstance(keywords, list):
+        keywords = []
+    steg_mapping = _effective_steganography_config(repo_root, config_yaml, force_secure=force_secure)
+
+    if processor_factory is None:  # pragma: no cover - heavy reportlab path
+        SteganographyConfig, SteganographyProcessor = _load_steganography()
+        steg_config = SteganographyConfig.from_dict(steg_mapping)
+        processor = SteganographyProcessor(steg_config)
+    else:
+        processor = processor_factory(steg_mapping)
+
+    success_count = 0
+    for pdf_path in pdfs:
+        manifest_path = pdf_path.with_suffix(".hashes.json")
+        manifest_mtime_before = manifest_path.stat().st_mtime_ns if manifest_path.exists() else None
+        try:
+            result = processor.process(
+                pdf_path,
+                title=title,
+                authors=authors,
+                keywords=keywords,
+                author_emails=author_emails,
+            )
+            if force_secure:
+                result_path = Path(result) if isinstance(result, (str, Path)) else None
+                manifest_is_fresh = manifest_path.is_file() and (
+                    manifest_mtime_before is None or manifest_path.stat().st_mtime_ns > manifest_mtime_before
+                )
+                if result_path is None or not result_path.is_file() or result_path.resolve() == pdf_path.resolve():
+                    raise RuntimeError("secure processor did not create a distinct output PDF")
+                if not manifest_is_fresh:
+                    raise RuntimeError("secure processor did not create a fresh hash manifest")
+            logger.info("Processed %s -> %s", pdf_path.name, getattr(result, "name", result))
+            success_count += 1
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to process %s: %s", pdf_path.name, exc)
+
+    logger.info(
+        "Steganography complete for %s: %d/%d",
+        project_qualified_name,
+        success_count,
+        len(pdfs),
+    )
+    return 0 if success_count == len(pdfs) else 1
+
+
+def run_secure_pipeline(
+    repo_root: Path,
+    options: SecureRunOptions,
+    *,
+    runner_cls: Any = PipelineRunner,
+    processor_factory: Any = None,
+) -> int:
+    """Run the secure pipeline.
+
+    1. Optionally run the normal pipeline (skipped if ``steganography_only``).
+    2. Apply steganography to all generated PDFs (one project, or all).
+
+    Args:
+        repo_root: Repository root.
+        options: User-supplied options.
+        runner_cls: Pipeline runner class (overridable for tests).
+        processor_factory: Steganography processor factory (overridable
+            for tests). Default uses real
+            :class:`infrastructure.steganography.SteganographyProcessor`.
+
+    Returns:
+        Process exit code.
+    """
+    if options.validate_kmyth:
+        return validate_kmyth_for_secure_run(repo_root, options.project)
+
+    # Pipeline phase
+    if not options.steganography_only:
+        if options.project is None:
+            logger.error("--project is required when running the secure pipeline phase")
+            return 2
+        validated = validate_project_slug(options.project, repo_root)
+        runner = runner_cls(repo_root=repo_root)
+        invocation = PipelineInvocation(
+            project=validated,
+            skip_infra=options.skip_infra,
+            mode=options.mode,
+            resume=options.resume,
+        )
+        rc = int(runner.run(invocation))
+        if rc != 0:
+            logger.error("Pipeline phase failed; skipping steganography.")
+            return rc
+
+    # Steganography phase — single project or all discovered projects
+    if options.project is not None:
+        targets = [validate_project_slug(options.project, repo_root)]
+    else:
+        targets = [p.qualified_name for p in discover_projects(repo_root)]
+        if not targets:
+            logger.error("No projects discovered for steganography phase")
+            return 1
+
+    overall_status = 0
+    processed_targets = 0
+    for target in targets:
+        rc = apply_steganography_to_project(
+            repo_root,
+            target,
+            processor_factory=processor_factory,
+            force_secure=True,
+            strict_config=True,
+        )
+        if rc == 1:
+            overall_status = 1
+        elif rc == 0:
+            processed_targets += 1
+        elif options.project is not None:
+            # An explicitly requested target with no source PDF is a failed
+            # request, not a successful no-op.
+            logger.error("No source PDFs were processed for explicit target %s", target)
+            overall_status = 1
+        else:
+            logger.info("Skipping %s: no source PDFs", target)
+
+    if overall_status == 0 and processed_targets == 0:
+        logger.error("Secure run produced no processed targets")
+        return 1
+    return overall_status

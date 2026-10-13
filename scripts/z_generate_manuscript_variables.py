@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_PROJECT_ROOT))
+sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 sys.path.insert(0, str(_PROJECT_ROOT.parents[2]))
 
 
@@ -36,7 +36,7 @@ def main() -> int:
     args = parser.parse_args()
 
     from infrastructure.rendering.manuscript_injection import write_resolved_manuscript_tree
-    from src.manuscript_variables import generate_variables, save_variables
+    from template_methods_paper.manuscript_variables import generate_variables, save_variables
 
     variables = generate_variables(
         _PROJECT_ROOT,

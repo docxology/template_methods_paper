@@ -1,0 +1,94 @@
+"""CLI interface for core infrastructure modules.
+
+This module provides core command adapters: the production pipeline entry
+point is ``infrastructure.orchestration`` (invoked by ``run.sh``), while this
+surface is exercised by ``tests/infra_tests/core/test_cli.py`` and pinned in
+``.cursor/operations_manifest.json``. Keep its handlers aligned with the
+orchestration-issued arguments so the two surfaces cannot drift silently.
+
+This module provides command-line interfaces for core pipeline functionality,
+extracted from bash scripts into testable Python CLI.
+
+Part of the infrastructure layer (Layer 1) - reusable across all projects.
+
+Implementation is split across:
+- ``cli_parser``: argument parser definition
+- ``cli_handlers``: command handler functions
+"""
+
+import sys
+from collections.abc import Sequence
+
+from infrastructure.core.logging.utils import get_logger, setup_logger
+from infrastructure.core.errors import CLI_COMMAND_FAILED, CLI_UNKNOWN_COMMAND
+
+# Re-export public API so existing imports continue to work
+from infrastructure.core.cli_parser import create_parser
+from infrastructure.core.cli_handlers import (
+    handle_discover_command,
+    handle_inventory_command,
+    handle_multi_project_command,
+    handle_pipeline_command,
+)
+
+logger = get_logger(__name__)
+
+
+__all__ = [
+    # Re-exports from cli_parser
+    "create_parser",
+    # Re-exports from cli_handlers
+    "handle_discover_command",
+    "handle_inventory_command",
+    "handle_multi_project_command",
+    "handle_pipeline_command",
+    # Local
+    "main",
+]
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Main CLI entry point.
+
+    Args:
+        argv: Optional argument vector (defaults to ``sys.argv[1:]``). Accepting
+            ``argv`` lets agents and tests invoke this CLI headlessly with the
+            same ``main(argv) -> int`` contract used across infrastructure CLIs.
+    """
+    parser = create_parser()
+    args = parser.parse_args(argv)
+
+    if not args.command:
+        parser.print_help()
+        return 1
+
+    try:
+        setup_logger("infrastructure.core.cli")
+
+        if args.command == "pipeline":
+            return handle_pipeline_command(args)
+        elif args.command == "multi-project":
+            return handle_multi_project_command(args)
+        elif args.command == "inventory":
+            return handle_inventory_command(args)
+        elif args.command == "discover":
+            return handle_discover_command(args)
+        else:
+            logger.error(CLI_UNKNOWN_COMMAND.format(command=args.command))
+            return 1
+
+    except KeyboardInterrupt:
+        return 130
+    except TimeoutError as e:
+        logger.error("Core CLI deadline expired: %s", e)
+        return 124
+    except ValueError as e:
+        logger.error("Invalid invocation: %s", e)
+        return 2
+    except Exception as e:  # noqa: BLE001 - top-level CLI handler must catch all
+        logger.error(CLI_COMMAND_FAILED.format(error=f"{type(e).__name__}: {e}"))
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

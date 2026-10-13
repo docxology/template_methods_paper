@@ -1,0 +1,16 @@
+*.sw?
+*~
+*.o
+*.so
+*_u.c
+*_u.h
+*_t.c
+*_t.h
+
+*.pem
+
+test/data/*
+.vscode
+
+# Built seal/unseal binaries — build artifacts, not source
+bin/

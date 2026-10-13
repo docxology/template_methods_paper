@@ -1,0 +1,312 @@
+"""Multi-project reporting orchestration.
+
+Convenience functions for multi-project executive reporting and per-run summaries.
+"""
+
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from infrastructure.core.logging.utils import get_logger
+from infrastructure.core.pipeline.multi_project import MultiProjectResult, validated_project_run
+from infrastructure.reporting.executive_reporter import (
+    generate_executive_summary,
+    save_executive_summary,
+)
+
+logger = get_logger(__name__)
+
+
+def _optional_dashboard_generator() -> Any | None:
+    """Return the optional plotting provider, importing it only when reporting needs it.
+
+    Ordinary pipeline imports must not initialize Matplotlib. The dashboard
+    modules guard their own Matplotlib imports, so the actual provider is
+    observed first: when it is genuinely absent, dashboards are skipped instead
+    of failing midway through rendering.
+    """
+    try:
+        import matplotlib  # noqa: F401
+
+        from infrastructure.reporting._dashboard_matplotlib import generate_all_dashboards
+    except ImportError:
+        return None
+    return generate_all_dashboards
+
+
+def generate_multi_project_report(repo_root: Path, project_names: list[str], output_dir: Path) -> dict[str, Path]:
+    """Orchestrate executive reporting for multiple projects into output_dir.
+
+    Returns:
+        Dictionary mapping file types (json, html, md, png, pdf) to saved file paths.
+    """
+    logger.info(f"Starting multi-project reporting for {len(project_names)} projects...")
+
+    all_files = {}
+
+    try:
+        summary = generate_executive_summary(repo_root, project_names)
+        summary_files = save_executive_summary(summary, output_dir)
+        all_files.update(summary_files)
+
+        generate_all_dashboards = _optional_dashboard_generator()
+        if generate_all_dashboards is not None:
+            dashboard_files = generate_all_dashboards(summary, output_dir)
+            all_files.update(dashboard_files)
+
+        logger.info(f"Multi-project reporting complete. Generated {len(all_files)} files.")
+        for file_type, path in all_files.items():
+            logger.info(f"  {file_type.upper()}: {path.name}")
+
+        return all_files
+
+    except (OSError, ValueError, KeyError) as e:
+        logger.error(f"Multi-project reporting failed: {e}")
+        raise
+
+
+def _build_summary_dict(result: MultiProjectResult, projects: list[Any]) -> dict[str, Any]:
+    """Build the analytics summary dict without performing any I/O."""
+    project_names = [getattr(p, "qualified_name", p.name) for p in projects]
+    raw_results = result.project_results
+    project_results = raw_results if isinstance(raw_results, dict) else {}
+    shared = result.shared_infrastructure_result
+    shared_run = shared.validated_run() if shared is not None else None
+
+    summary: dict[str, Any] = {
+        "timestamp": datetime.now().isoformat(),
+        "total_projects": len(projects),
+        "successful_projects": 0,
+        "failed_projects": len(projects),
+        "expected_projects": list(result.expected_projects),
+        "shared_infrastructure_exit_code": result.shared_infrastructure_exit_code,
+        "shared_infrastructure": (
+            {
+                "expected_stage_keys": list(shared_run.expected_stage_keys),
+                "outcomes": [outcome.to_dict() for outcome in shared_run.outcomes],
+                "exit_code": shared_run.exit_code,
+                "complete": shared_run.complete,
+            }
+            if shared_run is not None and shared_run.exit_code == result.shared_infrastructure_exit_code
+            else None
+        ),
+        "complete": False,
+        "exit_code": result.exit_code,
+        "total_duration": result.total_duration,
+        "infra_test_duration": result.infra_test_duration,
+        "projects": {},
+        "performance_analysis": {},
+        "error_aggregation": {},
+        "recommendations": [],
+    }
+
+    for proj_name in project_names:
+        raw = project_results.get(proj_name, [])
+        proj_result = raw if isinstance(raw, list) else []
+        run = validated_project_run(result, proj_name)
+        passed = run is not None and run.complete and proj_name in result.expected_projects
+        summary["projects"][proj_name] = {
+            "success": passed,
+            "exit_code": run.exit_code if run is not None else 1,
+            "expected_stage_keys": list(run.expected_stage_keys) if run is not None else [],
+            "outcomes": [outcome.to_dict() for outcome in run.outcomes] if run is not None else [],
+            "duration": sum(stage.duration for stage in proj_result),
+            "stages_completed": sum(outcome.complete for outcome in run.outcomes) if run is not None else 0,
+            "errors": [stage.error_message for stage in proj_result if stage.error_message],
+        }
+
+    summary["successful_projects"] = sum(row["success"] for row in summary["projects"].values())
+    summary["failed_projects"] = len(projects) - summary["successful_projects"]
+    summary["complete"] = (
+        tuple(project_names) == result.expected_projects
+        and result.exit_code == 0
+        and summary["successful_projects"] == len(projects)
+        and bool(projects)
+    )
+    if not summary["complete"] and summary["exit_code"] == 0:
+        summary["exit_code"] = 1
+
+    if project_results:
+        try:
+            proj_dur = [
+                (n, d["duration"])
+                for n, d in summary["projects"].items()
+                if isinstance(d, dict) and d.get("duration", 0) > 0
+            ]
+            durations = [d for _, d in proj_dur]
+            if durations:
+                summary["performance_analysis"] = {
+                    "slowest_project": max(proj_dur, key=lambda x: x[1])[0] if proj_dur else None,
+                    "fastest_project": min(proj_dur, key=lambda x: x[1])[0] if proj_dur else None,
+                    "average_duration": sum(durations) / len(durations),
+                    "total_pipeline_time": sum(durations),
+                }
+        except (TypeError, KeyError, IndexError, ZeroDivisionError) as e:
+            logger.warning(f"Error calculating performance analysis: {e}")
+
+    all_errors = [
+        {"project": proj_name, "error": err}
+        for proj_name, proj_data in summary["projects"].items()
+        for err in proj_data.get("errors", [])
+    ]
+    summary["error_aggregation"] = {
+        "total_errors": len(all_errors),
+        "errors_by_project": {proj: len(summary["projects"].get(proj, {}).get("errors", [])) for proj in project_names},
+    }
+
+    if summary["failed_projects"] > 0:
+        summary["recommendations"].append(
+            {
+                "priority": "high",
+                "action": "Review failed projects",
+                "details": f"{summary['failed_projects']} project(s) failed execution",
+            }
+        )
+    if summary["performance_analysis"].get("average_duration", 0) > 300:
+        summary["recommendations"].append(
+            {
+                "priority": "medium",
+                "action": "Consider performance optimization",
+                "details": f"Average project execution time: {summary['performance_analysis']['average_duration']:.1f}s",  # noqa: E501
+            }
+        )
+
+    return summary
+
+
+def generate_multi_project_summary_report(
+    result: MultiProjectResult, projects: list[Any], output_dir: Path
+) -> dict[str, Path]:
+    """Generate comprehensive multi-project summary report.
+
+    Args:
+        result: Multi-project execution result
+        projects: List of project objects
+        output_dir: Directory to save reports
+
+    Returns:
+        Dictionary mapping format names to saved file paths
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    summary = _build_summary_dict(result, projects)
+
+    saved_files: dict[str, Path] = {}
+
+    json_file = output_dir / "multi_project_summary.json"
+    try:
+        _tmp = json_file.with_suffix(json_file.suffix + ".tmp")
+        try:
+            _tmp.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+            _tmp.replace(json_file)
+        except OSError:
+            _tmp.unlink(missing_ok=True)
+            raise
+        saved_files["json"] = json_file
+        logger.info(f"Multi-project summary saved: {json_file}")
+    except OSError as e:
+        logger.error(f"Failed to write JSON summary {json_file}: {e}")
+        raise
+
+    md_file = output_dir / "multi_project_summary.md"
+    try:
+        _tmp = md_file.with_suffix(md_file.suffix + ".tmp")
+        try:
+            _tmp.write_text(_format_multi_project_summary_markdown(summary), encoding="utf-8")
+            _tmp.replace(md_file)
+        except OSError:
+            _tmp.unlink(missing_ok=True)
+            raise
+        saved_files["markdown"] = md_file
+        logger.info(f"Multi-project summary saved: {md_file}")
+    except OSError as e:
+        logger.error(f"Failed to write Markdown summary {md_file}: {e}")
+        raise
+
+    return saved_files
+
+
+def _format_multi_project_summary_markdown(summary: dict[str, Any]) -> str:
+    """Format multi-project summary as markdown."""
+    lines = [
+        "# Multi-Project Execution Summary",
+        "",
+        f"**Generated:** {summary['timestamp']}",
+        "",
+        "## Overview",
+        "",
+        f"- **Total Projects:** {summary['total_projects']}",
+        f"- **Successful:** {summary['successful_projects']}",
+        f"- **Failed:** {summary['failed_projects']}",
+        f"- **Total Duration:** {summary['total_duration']:.1f}s",
+        "",
+    ]
+
+    if summary.get("infra_test_duration", 0) > 0:
+        lines.extend([f"- **Infrastructure Tests:** {summary['infra_test_duration']:.1f}s", ""])
+    if shared := summary.get("shared_infrastructure"):
+        lines.append(f"- **Shared Infrastructure Exit:** {shared['exit_code']}")
+        for outcome in shared["outcomes"]:
+            lines.append(
+                f"- **{outcome['stage_key']}:** {outcome['status']}; original child exit {outcome['child_exit_code']}"
+            )
+        lines.append("")
+
+    lines.extend(["## Project Results", ""])
+
+    for proj_name, proj_data in summary["projects"].items():
+        status_icon = "✅" if proj_data["success"] else "❌"
+        lines.append(f"### {status_icon} {proj_name}")
+        lines.append(f"- **Status:** {'Success' if proj_data['success'] else 'Failed'}")
+        lines.append(f"- **Duration:** {proj_data['duration']:.1f}s")
+        lines.append(f"- **Stages Completed:** {proj_data['stages_completed']}")
+
+        if proj_data["errors"]:
+            lines.append("- **Errors:**")
+            for err in proj_data["errors"][:3]:
+                lines.append(f"  - {err}")
+            if len(proj_data["errors"]) > 3:
+                lines.append(f"  - ... and {len(proj_data['errors']) - 3} more")
+        lines.append("")
+
+    if summary.get("performance_analysis"):
+        perf = summary["performance_analysis"]
+        lines.extend(
+            [
+                "## Performance Analysis",
+                "",
+                f"- **Slowest Project:** {perf.get('slowest_project', 'N/A')}",
+                f"- **Fastest Project:** {perf.get('fastest_project', 'N/A')}",
+                f"- **Average Duration:** {perf.get('average_duration', 0):.1f}s",
+                f"- **Total Pipeline Time:** {perf.get('total_pipeline_time', 0):.1f}s",
+                "",
+            ]
+        )
+
+    if summary.get("error_aggregation"):
+        err_agg = summary["error_aggregation"]
+        lines.extend(
+            [
+                "## Error Summary",
+                "",
+                f"- **Total Errors:** {err_agg['total_errors']}",
+                "",
+            ]
+        )
+
+        if err_agg.get("errors_by_project"):
+            lines.append("**Errors by Project:**")
+            for proj, count in err_agg["errors_by_project"].items():
+                if count > 0:
+                    lines.append(f"- {proj}: {count} error(s)")
+            lines.append("")
+
+    if summary.get("recommendations"):
+        lines.extend(["## Recommendations", ""])
+        for rec in summary["recommendations"]:
+            lines.append(f"### {rec['priority'].upper()}: {rec['action']}")
+            lines.append(f"{rec['details']}")
+            lines.append("")
+
+    return "\n".join(lines)

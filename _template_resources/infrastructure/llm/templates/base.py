@@ -1,0 +1,23 @@
+"""Base template class for LLM operations."""
+
+from string import Template
+from typing import Any
+
+from infrastructure.core.exceptions import LLMTemplateError
+
+from infrastructure.core.logging.utils import get_logger
+
+logger = get_logger(__name__)
+
+
+class ResearchTemplate:
+    """Base class for research templates."""
+
+    template_str: str = ""
+
+    def render(self, **kwargs: Any) -> str:
+        """Render template with variables."""
+        try:
+            return Template(self.template_str).substitute(**kwargs)
+        except KeyError as e:
+            raise LLMTemplateError(f"Missing template variable: {e}", context={"required": str(e)}) from e

@@ -1,0 +1,171 @@
+"""Hermes plugin cache validation gate (opt-in; not part of default template pipeline).
+
+Requires ``HERMES_HOME`` and a Hermes plugin tree. Invoked only via
+``scripts/gates/gate_cache.py`` — not wired into ``./run.sh`` or CI.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+from infrastructure.core.logging.utils import get_logger
+
+logger = get_logger(__name__)
+
+
+class _NoOpMetrics:
+    def __init__(self, name: str, description: str = "") -> None:
+        self._name = name
+        self._description = description
+
+    def labels(self, **_kwargs: str) -> "_NoOpMetrics":
+        """Label a metric with tag values."""
+        return self
+
+    def inc(self, amount: float = 1.0) -> None:
+        """Increment a counter."""
+        logger.debug("%s.inc(%.1f)", self._name, amount)
+
+
+class _NoOpHistogram:
+    def __init__(self, name: str, description: str = "") -> None:
+        self._name = name
+        self._description = description
+
+    def labels(self, **_kwargs: str) -> "_NoOpHistogram":
+        """Label a metric with tag values."""
+        return self
+
+    def observe(self, value: float) -> None:
+        """Record an observation."""
+        logger.debug("%s.observe(%.4f)", self._name, value)
+
+
+gate_runs_total = _NoOpMetrics("gate_runs_total", "Total gate runs by name and outcome")
+gate_duration_seconds = _NoOpHistogram("gate_duration_seconds", "Gate execution duration in seconds")
+
+GATES = (
+    {
+        "name": "cache",
+        "module": "infrastructure.core.cache_gate",
+        "function": "run_cache_gate",
+        "globs": (),
+    },
+    {
+        "name": "security",
+        "module": "scripts.gates.security_scan",
+        "function": "main",
+        "globs": ("src/**/*.py", "pyproject.toml", "tests/**/*.py"),
+    },
+    {
+        "name": "plugin-export-check",
+        "module": "scripts.gates.plugin_export_check",
+        "function": "run_plugin_export_check",
+        "globs": (
+            "src/registrations.py",
+            "src/hermes_plugin.py",
+            "src/core/registry.py",
+            ".hermes/plugins/template-plugin/**",
+        ),
+    },
+    {
+        "name": "security-scan",
+        "module": "scripts.gates.security_scan",
+        "function": "main",
+        "globs": ("src/**/*.py", "pyproject.toml", "tests/**/*.py"),
+    },
+)
+
+
+def _is_cache_fresh(cache_marker: Path, ttl_seconds: int) -> bool:
+    if not cache_marker.exists():
+        return False
+    try:
+        age = time.time() - cache_marker.stat().st_mtime
+        return age < ttl_seconds
+    except OSError:
+        return False
+
+
+def _populate_cache(hermes_home: Path, cache_path: Path, cache_marker: Path) -> bool:
+    try:
+        cache_path.mkdir(parents=True, exist_ok=True)
+        plugins_src = hermes_home / "plugins"
+        plugins_dst = cache_path / "plugins"
+        if plugins_src.exists():
+            if plugins_dst.exists():
+                shutil.rmtree(plugins_dst)
+            shutil.copytree(plugins_src, plugins_dst)
+        tools_src = hermes_home / "tools"
+        tools_dst = cache_path / "tools"
+        if tools_src.exists():
+            if tools_dst.exists():
+                shutil.rmtree(tools_dst)
+            shutil.copytree(tools_src, tools_dst)
+        metadata = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "hermes_home": str(hermes_home),
+            "version": "0.1.0",
+        }
+        (cache_path / "cache_metadata.json").write_text(
+            json.dumps(metadata, indent=2),
+            encoding="utf-8",
+        )
+        cache_marker.touch()
+        logger.info("Cache populated at %s", cache_path)
+        return True
+    except OSError as exc:
+        logger.error("Failed to populate cache: %s", exc)
+        return False
+
+
+def run_cache_gate() -> int:
+    """Run cache gate."""
+    hermes_home_env = os.getenv("HERMES_HOME")
+    # Default under the user cache dir (XDG_CACHE_HOME or ~/.cache) for portability;
+    # /var/cache requires root and is not writable on most dev/CI machines.
+    default_cache = Path(os.getenv("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "template"
+    cache_path = Path(os.getenv("HERMES_CACHE_PATH") or default_cache)
+    cache_ttl = int(os.getenv("CACHE_TTL_SECONDS", "3600"))
+    cache_marker = cache_path / ".cache_valid"
+
+    if not hermes_home_env:
+        logger.error("HERMES_HOME environment variable not set")
+        gate_runs_total.labels(gate="cache", outcome="failure").inc()
+        return 1
+
+    hermes_home = Path(hermes_home_env)
+    if not hermes_home.exists():
+        logger.error("Hermes home not found: %s", hermes_home_env)
+        gate_runs_total.labels(gate="cache", outcome="failure").inc()
+        return 1
+
+    start_time = time.time()
+    outcome = "failure"
+    try:
+        if _is_cache_fresh(cache_marker, cache_ttl):
+            logger.info("Cache is fresh (TTL: %ss). Skipping rebuild.", cache_ttl)
+            outcome = "success"
+            return 0
+        logger.info("Cache stale or missing. Rebuilding...")
+        cache_path.mkdir(parents=True, exist_ok=True)
+        if not _populate_cache(hermes_home, cache_path, cache_marker):
+            return 1
+        outcome = "success"
+        return 0
+    except KeyboardInterrupt:
+        logger.error("Gate interrupted by user")
+        outcome = "error"
+        return 1
+    except OSError as exc:
+        logger.error("Unexpected error in cache gate: %s", exc)
+        outcome = "error"
+        return 1
+    finally:
+        gate_duration_seconds.labels(gate="cache").observe(time.time() - start_time)
+        gate_runs_total.labels(gate="cache", outcome=outcome).inc()
