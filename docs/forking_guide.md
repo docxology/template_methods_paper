@@ -28,8 +28,8 @@ uv run python projects/working/my_methods_project/scripts/methods_analysis.py
 only the public canonical exemplars under `projects/templates/` are ever
 git-tracked. Your fork (`projects/working/my_methods_project/`) is local-only
 and won't be pushed even if you `git add -f` it. Read
-[`../../../../CLAUDE.md`](../../../../CLAUDE.md) "CONFIDENTIALITY INVARIANT" for
-the full fence.
+[`.gitignore`](../.gitignore) — the tracked/untracked fence itself — for the
+full rule.
 
 ## What you're forking
 
