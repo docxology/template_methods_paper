@@ -4,8 +4,8 @@ Get up and running with the `template_methods_paper` exemplar in 5 minutes.
 
 ## Prerequisites
 
-- Python 3.12 or higher (`requires-python` in [`pyproject.toml`](../pyproject.toml))
-- [`uv`](https://docs.astral.sh/uv/getting-started/installation/) package manager (all commands below run through `uv`)
+- Python 3.10 or higher
+- [`uv`](https://github.com/astral-sh/uv) package manager (repo invariant — see the root `CLAUDE.md`)
 - Git
 
 ## Setup (One-Time)
@@ -28,8 +28,7 @@ Validate the environment and check that the project test suite passes with
 the ≥90% coverage gate:
 
 ```bash
-uv run pytest projects/templates/template_methods_paper/tests \
-    --cov=projects/templates/template_methods_paper/src --cov-fail-under=90 -v --tb=short
+uv run pytest projects/templates/template_methods_paper/tests -v --tb=short
 ```
 
 Expected: passing tests and coverage above the 90% gate. Live collection

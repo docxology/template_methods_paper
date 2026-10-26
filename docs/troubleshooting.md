@@ -97,13 +97,12 @@ repository root.
 
 ## `uv` command not found
 
-**Fix.** Install `uv` with the official standalone installer (`uv`-only repo
-invariant — never bootstrap `uv` through `pip`); see the
-[uv installation guide](https://docs.astral.sh/uv/getting-started/installation/):
+**Fix.** Install `uv` via the canonical installer (the repo invariant — see
+root `CLAUDE.md` — is `uv`-only; never bootstrap `uv` through `pip`):
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# or on macOS: brew install uv
+Follow the [checksum-verified uv installation instructions](../../../../docs/operational/build/dependency-management.md#installing-uv),
+or install it with Homebrew on macOS.
 ```
 
 ## Coverage gate fails (under 90%)

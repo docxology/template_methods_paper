@@ -45,23 +45,6 @@ uv run python scripts/pipeline/stage_04_validate.py --project templates/template
 uv run python scripts/pipeline/stage_05_copy.py --project templates/template_methods_paper
 ```
 
-### Standalone clone of this repository
-
-A clone of *this* repository runs the DSL library and every test module
-except the orchestrator one directly from the clone root:
-
-```bash
-uv sync --extra dev
-uv run pytest tests -q --ignore=tests/test_methods_analysis_script.py
-```
-
-`tests/test_methods_analysis_script.py` exercises `scripts/methods_analysis.py`,
-which imports the template's shared `infrastructure.*` package. This
-repository only carries that package as a reference copy under
-[`_template_resources/infrastructure/`](_template_resources/infrastructure/)
-(its `_version.py` reads a sibling `pyproject.toml` that exists only in the
-monorepo), so run that module from the monorepo instead.
-
 ## Tests, outputs, and validation
 
 **Test/coverage gate (authoritative per-project command).** Exit code 0 alone
