@@ -223,7 +223,7 @@ int get_existing_srk_handle(TSS2_SYS_CONTEXT * sapi_ctx,
   // if SRK must be re-derived, check valid next handle was also supplied
   if ((*srkHandle == 0) && (*nextSrkHandle == 0))
   {
-    kmyth_log(LOG_ERR, "SRK must be re-derived, but TPM cannot support %s"
+    kmyth_log(LOG_ERR, "SRK must be re-derived, but TPM cannot support "
               "loading additional persistent objects");
     return 1;
   }
