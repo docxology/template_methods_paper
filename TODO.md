@@ -88,3 +88,7 @@ No active rows are currently scoped at this size.
 
 Rows remain active until the acceptance command and negative control pass in the same source revision.
 A blocked row is a deliberate boundary, not a skipped success.
+
+## Workflowz review — 2026-11-10
+
+Coverage note: This bounded packet exposed project guidance, README, the existing future-only backlog, package metadata, and selected infrastructure excerpts, but no project DSL source or test excerpts (0 source files with excerpts). The visible `pass` in `_template_resources/infrastructure/core/logging/setup.py:34` is only a `finally` clause after handler closure, not a production fallback; the SGX `SIM` default at `_template_resources/infrastructure/steganography/kmyth/sgx/Makefile:35` is an explicit build-mode setting, not evidence of a silent substitute. No concrete, independently actionable improvement with exact source evidence and a behavioral acceptance probe survived. Re-review on a concrete failure or when relevant project source, tests, CI, or runtime configuration changes.
