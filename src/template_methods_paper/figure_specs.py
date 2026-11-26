@@ -24,7 +24,7 @@ METHODS_FIGURE_SPECS: tuple[MethodsFigureSpec, ...] = (
         caption="Step counts for each deterministically compiled example method.",
         alt_text=(
             "Two vertical bars compare the compiled step counts for PBS preparation "
-            "and sensor calibration; the sensor-calibration plan contains the taller bar."
+            "and the sensor-calibration sweep."
         ),
         generated_by="scripts.methods_analysis.run_methods_analysis",
     ),

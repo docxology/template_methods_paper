@@ -6,6 +6,7 @@ Builds real config.yaml / output/data / output/reports fixtures under
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -32,28 +33,42 @@ from template_methods_paper.methods_dsl import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _write_config(project_root) -> None:
-    manuscript_dir = project_root / "manuscript"
+def _write_config(project_root, *, legacy: bool = False) -> Path:
+    manuscript_parent = project_root if legacy else project_root / "docs"
+    manuscript_dir = manuscript_parent / "manuscript"
     manuscript_dir.mkdir(parents=True, exist_ok=True)
     config = {
         "paper": {"version": "1.0"},
         "authors": [{"name": "Test Author"}],
         "keywords": ["methods", "controlled systems"],
     }
-    (manuscript_dir / "config.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
+    path = manuscript_dir / "config.yaml"
+    path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    return path
 
 
 def test_generate_variables_draft_mode_without_outputs(tmp_path):
-    _write_config(tmp_path)
+    _write_config(tmp_path, legacy=True)
+    path = _write_config(tmp_path)
+    assert path.parent.parent.name == "docs"
+    path.write_text(path.read_text().replace("Test Author", "Canonical Author"))
     variables = generate_variables(tmp_path, require_analysis_outputs=False)
     assert variables["CONFIG_VERSION"] == "1.0"
-    assert variables["CONFIG_FIRST_AUTHOR"] == "Test Author"
+    assert variables["CONFIG_FIRST_AUTHOR"] == "Canonical Author"
+    assert variables["CONFIG_HASH"] == hashlib.sha256(path.read_bytes()).hexdigest()[:CONFIG_HASH_LENGTH]
     assert variables["PBS_STEP_COUNT"] == "N/A"
     assert variables["TOTAL_GATES_RUN"] == "N/A"
     # DSL constants and the live determinism check never depend on output/.
     assert variables["DETERMINISM_CHECK"] == "Yes"
     assert variables["EXAMPLE_METHOD_COUNT"] == "2"
     assert int(variables["DSL_UNIT_COUNT"]) > 0
+
+
+def test_generate_variables_reads_legacy_config(tmp_path):
+    path = _write_config(tmp_path, legacy=True)
+    variables = generate_variables(tmp_path)
+    assert variables["CONFIG_FIRST_AUTHOR"] == "Test Author"
+    assert variables["CONFIG_HASH"] == hashlib.sha256(path.read_bytes()).hexdigest()[:CONFIG_HASH_LENGTH]
 
 
 def test_generate_variables_raises_when_required_outputs_missing(tmp_path):

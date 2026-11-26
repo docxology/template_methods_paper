@@ -11,7 +11,7 @@ describes is reproducible and unit-tested.
 
 | File | Role |
 | --- | --- |
-| `__init__.py` | Public DSL exports re-exported from `src/__init__.py`. |
+| `__init__.py` | Public DSL exports re-exported from `template_methods_paper`. |
 | `vocabulary.py` | Controlled-vocabulary `StepKind` and `Target` enums; `target_accepts`. |
 | `units.py` | Dimensional-safety unit system: `Dimension`, `DimensionError`, `Quantity`. |
 | `model.py` | `Method`, `Step`, `Resource`, `Parameter` frozen dataclasses with shape validation. |
@@ -24,6 +24,6 @@ describes is reproducible and unit-tested.
 
 ## See Also
 
-- [`../README.md`](../README.md) - project source overview
-- [`../AGENTS.md`](../AGENTS.md) - source-layer editing rules
-- [`AGENTS.md`](AGENTS.md) - subpackage-level rules
+- [`../README.md`](source.md) - project source overview
+- [`../AGENTS.md`](../src/AGENTS.md) - source-layer editing rules
+- [`AGENTS.md`](../src/template_methods_paper/methods_dsl/AGENTS.md) - subpackage-level rules

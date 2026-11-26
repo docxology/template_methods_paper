@@ -122,6 +122,6 @@ convention.
 
 ## See Also
 
-- [AGENTS.md](template_methods_paper/AGENTS.md) — API reference and infrastructure integration.
-- [../tests/PATTERNS.md](../tests/PATTERNS.md) — How to test code written here.
-- [../scripts/CONVENTIONS.md](../scripts/CONVENTIONS.md) — How scripts use this code.
+- [AGENTS.md](../src/template_methods_paper/AGENTS.md) — API reference and infrastructure integration.
+- [../tests/PATTERNS.md](test_patterns.md) — How to test code written here.
+- [../scripts/CONVENTIONS.md](script_conventions.md) — How scripts use this code.

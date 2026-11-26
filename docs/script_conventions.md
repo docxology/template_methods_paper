@@ -103,6 +103,6 @@ Before submitting a new or modified script, verify:
 
 ## See Also
 
-- [AGENTS.md](AGENTS.md) — Script roles and run commands.
-- [../src/STYLE.md](../src/STYLE.md) — Style guide for the code scripts import.
-- [../docs/architecture.md](../docs/architecture.md) — DSL pipeline-stage flow diagram.
+- [AGENTS.md](../scripts/AGENTS.md) — Script roles and run commands.
+- [../src/STYLE.md](source_style.md) — Style guide for the code scripts import.
+- [../docs/architecture.md](architecture.md) — DSL pipeline-stage flow diagram.

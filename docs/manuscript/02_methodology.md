@@ -117,8 +117,7 @@ detect a chain rewritten from record zero, exactly the boundary BPL's own
 ## Zero-mock testing methodology
 
 The project is governed by a strict zero-mock policy, evaluated by running
-`uv run pytest projects/templates/template_methods_paper/tests` during the
-build.
+`uv run --no-sync pytest tests` from the working checkout.
 
 1. **Library tests** exercise every gate, the compiler, the exporters, and
    the trust module against real `Method` objects — `conftest.py` ships one
@@ -133,8 +132,6 @@ build.
    `plan_hash` equality live, rather than asserting against a hardcoded hash
    literal — a literal would silently stop testing the moment the
    compiler's hash input changed.
-4. **Coverage gate**: CI enforces a ≥90% statement-coverage gate on
-Falling below that floor fails the gate outright (`--cov-fail-under` enforces it).
-   `projects/templates/template_methods_paper/src/`; the live figure is
-   tracked in
-   [`docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md).
+4. **Coverage gate**: the verification command measures statement and branch
+   coverage in `src/template_methods_paper/`. A result below the configured
+   threshold fails the gate. See Reproducibility for the command.

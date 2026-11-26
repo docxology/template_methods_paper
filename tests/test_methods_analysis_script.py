@@ -69,7 +69,7 @@ def test_run_methods_analysis_registry_binds_real_figure(tmp_path):
             "metadata": {
                 "alt_text": (
                     "Two vertical bars compare the compiled step counts for PBS preparation "
-                    "and sensor calibration; the sensor-calibration plan contains the taller bar."
+                    "and the sensor-calibration sweep."
                 )
             },
         }

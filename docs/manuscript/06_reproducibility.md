@@ -8,33 +8,31 @@ by hand.
 
 ## How to regenerate everything
 
-From the repository root:
+The standalone checkout supplies the methods library and the two analysis
+entry points. With that checkout registered as a working project in the
+pinned template renderer, run the following from the working checkout.
+`renderer_root` is the absolute path to the template checkout at commit
+`87704feae0a4490ef7dad9c931d268e8c30273c2`.
 
 ```bash
-# 1. Run the analysis (compiles methods, exports artifacts, writes figure + reports)
-uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
-
-# 2. Run the test suite with the coverage gate
-uv run pytest projects/templates/template_methods_paper/tests \
-    --cov=projects/templates/template_methods_paper/src --cov-fail-under=90
-
-# 3. Generate and inject manuscript variables
-uv run python projects/templates/template_methods_paper/scripts/z_generate_manuscript_variables.py
-
-# 4. Render the manuscript
-uv run python scripts/pipeline/stage_03_render.py --project templates/template_methods_paper
+uv sync --locked --extra dev --python 3.14
+PYTHONPATH="$renderer_root" uv run --no-sync pytest tests --cov=src/template_methods_paper --cov-fail-under=90
+PYTHONPATH="$renderer_root" uv run --no-sync python scripts/methods_analysis.py
+PYTHONPATH="$renderer_root" uv run --no-sync python scripts/z_generate_manuscript_variables.py
 ```
 
-Or, end to end via the orchestrated pipeline:
+From the pinned template checkout, with its own locked environment installed,
+run the render and validation stages.
 
 ```bash
-uv run python scripts/runner/execute_pipeline.py --project templates/template_methods_paper --core-only
+uv run --no-sync python scripts/pipeline/stage_03_render.py --project working/template_methods_paper
+uv run --no-sync python scripts/pipeline/stage_04_validate.py --project working/template_methods_paper
 ```
 
 ## Generated artifact registry
 
 The analysis script writes the following artifacts under
-`projects/templates/template_methods_paper/output/`:
+`output/`:
 
 | Artifact | Produced by |
 |---|---|
@@ -69,7 +67,7 @@ Every quantitative claim in [@sec:results] is either a generated variable
 sourced from a live analysis output or registered in `data/claim_ledger.yaml` for
 evidence-registry validation. The manuscript intentionally does not
 hand-transcribe volatile values, so prose and artifacts cannot disagree.
-Configuration provenance is itself injected: `{{CONFIG_HASH}}` is the
-SHA-256 of `manuscript/config.yaml` at build time, and
+Configuration provenance is injected. The value `{{CONFIG_HASH}}` is the
+SHA-256 prefix of `docs/manuscript/config.yaml` at build time, and
 `{{GENERATION_TIMESTAMP}}` records when the variables were generated
 (honoring `SOURCE_DATE_EPOCH` for byte-reproducible builds).

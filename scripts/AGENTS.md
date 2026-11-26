@@ -39,9 +39,9 @@ flowchart LR
 ## Usage
 
 ```bash
-# From the monorepo root
-uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
-uv run python projects/templates/template_methods_paper/scripts/z_generate_manuscript_variables.py
+# From the standalone working checkout with the quickstart environment
+uv run --no-sync python scripts/methods_analysis.py
+uv run --no-sync python scripts/z_generate_manuscript_variables.py
 ```
 
 `methods_analysis.py`:
@@ -76,7 +76,7 @@ uv run python projects/templates/template_methods_paper/scripts/z_generate_manus
 
 | Function | Role |
 | --- | --- |
-| `main()` | Reads `manuscript/config.yaml` and `output/data`/`output/reports` artifacts via `template_methods_paper.manuscript_variables.generate_variables`, writes `output/data/manuscript_variables.json`, and injects every `{{TOKEN}}` via `infrastructure.rendering.manuscript_injection.write_resolved_manuscript_tree`. `--allow-draft` permits `N/A` fallbacks before `methods_analysis.py` has run. |
+| `main()` | Reads `docs/manuscript/config.yaml` and `output/data`/`output/reports` artifacts via `template_methods_paper.manuscript_variables.generate_variables`, writes `output/data/manuscript_variables.json`, and injects every `{{TOKEN}}` via `infrastructure.rendering.manuscript_injection.write_resolved_manuscript_tree`. `--allow-draft` permits `N/A` fallbacks before `methods_analysis.py` has run. |
 
 All DSL logic is in `src/template_methods_paper/methods_dsl/`; these scripts only orchestrate. Tested
 by [`../tests/test_methods_analysis_script.py`](../tests/test_methods_analysis_script.py),
@@ -97,7 +97,7 @@ which runs `run_methods_analysis()` against a temporary output root.
 
 ## See Also
 
-- [README.md](README.md) — Quick reference.
-- [CONVENTIONS.md](CONVENTIONS.md) — Thin-orchestrator rules and the headless
+- [README.md](../docs/scripts.md) — Quick reference.
+- [CONVENTIONS.md](../docs/script_conventions.md) — Thin-orchestrator rules and the headless
   plotting pattern.
 - [../src/AGENTS.md](../src/AGENTS.md) — Library API the scripts call.

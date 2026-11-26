@@ -5,18 +5,21 @@
 figure with matplotlib, and write artifacts to `output/`. All compilation,
 validation, and export logic lives in the library, never here.
 
-## Quick Start
+## Quickstart
+
+Run from the working checkout with the environment from the
+[quickstart](quickstart.md).
 
 ```bash
 # Compile the example methods, run all gates, export artifacts, plot a figure
-uv run python scripts/methods_analysis.py
+uv run --no-sync python scripts/methods_analysis.py
 
 # Generate manuscript {{TOKEN}} values and inject them
-uv run python scripts/z_generate_manuscript_variables.py
+uv run --no-sync python scripts/z_generate_manuscript_variables.py
 
 # View generated outputs
-ls -la ../output/data/
-cat ../output/reports/gate_report.json
+ls -la output/data/
+cat output/reports/gate_report.json
 ```
 
 ## Scripts
@@ -24,7 +27,7 @@ cat ../output/reports/gate_report.json
 | Script | Role | Pipeline |
 | --- | --- | --- |
 | `methods_analysis.py` | Compiles every example method, runs all validation gates, exports worklist/CSV/Mermaid/JSON per method, demonstrates a provenance hash-chain, and plots a step-count figure | Required |
-| `z_generate_manuscript_variables.py` | Reads `methods_analysis.py`'s outputs plus `manuscript/config.yaml` and resolves every `{{TOKEN}}` in `manuscript/*.md` | Required (runs after analysis) |
+| `z_generate_manuscript_variables.py` | Reads `methods_analysis.py`'s outputs plus `docs/manuscript/config.yaml` and resolves every `{{TOKEN}}` in `docs/manuscript/*.md` | Required (runs after analysis) |
 | `generate_api_docs.py` | Builds a glossary-style API index over `src/` via `infrastructure.documentation.glossary_gen` | Optional |
 
 `run_methods_analysis(project_root=...)` accepts an output-root override so
@@ -43,10 +46,10 @@ graph TD
     INIT --> TRU[src/template_methods_paper/methods_dsl/trust.py]
     MA --> OUT[output/data + output/reports + output/figures]
     GMV[z_generate_manuscript_variables.py] --> OUT
-    GMV --> MAN[manuscript/*.md TOKEN substitution]
+    GMV --> MAN[docs/manuscript/*.md TOKEN substitution]
 ```
 
 ## More Information
 
-See [AGENTS.md](AGENTS.md) for technical documentation and
-[CONVENTIONS.md](CONVENTIONS.md) for the thin-orchestrator rules.
+See [AGENTS.md](../scripts/AGENTS.md) for technical documentation and
+[CONVENTIONS.md](script_conventions.md) for the thin-orchestrator rules.

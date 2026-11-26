@@ -9,8 +9,7 @@ tags: [exemplar, methods, dsl, bpl]
 
 # template-methods-paper
 
-Project-scoped skill for the in-repo exemplar at
-`projects/templates/template_methods_paper/`. Load this when working inside the project.
+Project-scoped skill for the standalone methods-paper exemplar.
 
 ## When to Use
 
@@ -22,14 +21,9 @@ Project-scoped skill for the in-repo exemplar at
 
 ## Quick Reference
 
-```bash
-# From the repository root
-uv run pytest projects/templates/template_methods_paper/tests --cov=projects/templates/template_methods_paper/src --cov-fail-under=90
-uv run python scripts/pipeline/stage_02_analysis.py --project templates/template_methods_paper
-uv run python scripts/pipeline/stage_03_render.py --project templates/template_methods_paper
-uv run python scripts/pipeline/stage_04_validate.py --project templates/template_methods_paper
-uv run python scripts/pipeline/stage_05_copy.py --project templates/template_methods_paper
-```
+Follow the [quickstart](../../../docs/quickstart.md) for native tests and analysis.
+The [render guide](../../../docs/rendering_pipeline.md) has the pinned template
+commands for rendering and validation.
 
 ## Pitfalls
 
@@ -42,12 +36,12 @@ uv run python scripts/pipeline/stage_05_copy.py --project templates/template_met
 - **Figure provenance is part of analysis.** `methods_analysis.py` validates
   `step_counts.png` against `src/template_methods_paper/figure_specs.py` before writing
   `output/figures/figure_registry.json`.
-- **Run from the repo root.** Commands assume the template monorepo root
-  as working directory unless the child `AGENTS.md` states otherwise.
+- **Check the working directory.** Run native tests and analysis from the
+  project checkout. Run the stage scripts from the pinned renderer checkout.
 
 ## Cross-refs
 
 - Project contract: [`AGENTS.md`](../../../AGENTS.md)
 - README: [`README.md`](../../../README.md)
-- TODO: [`TODO.md`](../../../TODO.md)
-- Exemplar roster: [`projects/AGENTS.md`](../../../../../AGENTS.md)
+- TODO: [Maintenance backlog](../../../docs/backlog.md)
+- Exemplar roster: [`projects/AGENTS.md`](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/projects/AGENTS.md)

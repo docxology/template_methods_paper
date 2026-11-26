@@ -14,4 +14,4 @@ describes is declared directly in `src/template_methods_paper/methods_dsl/vocabu
 Generated analysis outputs (compiled plans, gate reports, figures) belong
 under `output/` during pipeline runs, not here.
 
-Schema and edit protocol: [`AGENTS.md`](AGENTS.md).
+Schema and edit protocol: [`AGENTS.md`](../data/AGENTS.md).
