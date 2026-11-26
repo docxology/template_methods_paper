@@ -32,4 +32,4 @@ code, the dataset, or generated reports rather than `{{VARIABLE}}` injection.
 2. Re-run evidence validation / pipeline stages that consume the ledger.
 3. Do not store generated CSV/JSON/PNG under `data/` — those go to `output/`.
 
-Quick orientation: [`README.md`](README.md).
+Quick orientation: [`README.md`](../docs/claims.md).

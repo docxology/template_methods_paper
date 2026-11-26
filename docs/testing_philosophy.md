@@ -30,20 +30,20 @@ a signal: move that code to `scripts/` and test the `src/` boundary directly.
 | `test_trust.py` | `ProvenanceTier`, hash-chain append/verify, tamper detection |
 | `test_examples_methods.py` | The two worked example methods pass every gate and compile |
 | `test_project_paths.py` | `project_output_dirs` and `resolve_project_root` path plumbing |
-| `test_manuscript_variables.py` | Every `{{TOKEN}}` referenced in `manuscript/*.md` is emitted |
+| `test_manuscript_variables.py` | Every `{{TOKEN}}` referenced in `docs/manuscript/*.md` is emitted |
 | `test_methods_analysis_script.py` | Thin script `run_methods_analysis()` writes real exports + reports + a figure to a temp root |
 
-Configuration: `projects/templates/template_methods_paper/pyproject.toml`
+Configuration: `pyproject.toml`
 (`fail_under = 90`, matching the root pipeline gate).
 
-Conftest: `projects/templates/template_methods_paper/tests/conftest.py`
+Conftest: `tests/conftest.py`
 (sets `MPLBACKEND=Agg`, adds `src/` and the repo root to `sys.path`, and
 ships shared `Method` fixtures — `linear_method`, `diamond_method`, and one
 fixture per gate-failure mode).
 
 Live test count and coverage percentage:
-[`docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md)
-(or `uv run pytest tests/ --collect-only -q` from the project directory).
+[`docs/_generated/COUNTS.md`](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/docs/_generated/COUNTS.md)
+(or `uv run --no-sync pytest tests/ --collect-only -q` from the project directory).
 
 ## Test Organization
 
@@ -58,7 +58,7 @@ names a test class absent from `tests/`.
 
 ```toml
 [tool.coverage.run]
-source = ["src"]
+source = ["src/template_methods_paper"]
 branch = true
 omit = ["tests/*", "*/__init__.py", "*/test_*.py"]
 
@@ -66,11 +66,10 @@ omit = ["tests/*", "*/__init__.py", "*/test_*.py"]
 fail_under = 90
 ```
 
-Authoritative gate (measures all of `src/`):
+Authoritative gate (measures the installed package):
 
 ```bash
-cd projects/templates/template_methods_paper
-uv run pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=90
+uv run --no-sync pytest tests/ --cov=src/template_methods_paper --cov-report=term-missing --cov-fail-under=90
 ```
 
 ## Zero-Mock Checklist
@@ -100,8 +99,7 @@ A green exit code is **not** proof the suite ran. Confirm **N collected > 0
 AND coverage ≥ 90%**.
 
 ```bash
-cd projects/templates/template_methods_paper
-uv run pytest tests/ --cov=src --cov-fail-under=90 -q
+uv run --no-sync pytest tests/ --cov=src/template_methods_paper --cov-fail-under=90 -q
 ```
 
 See [`troubleshooting.md`](troubleshooting.md).

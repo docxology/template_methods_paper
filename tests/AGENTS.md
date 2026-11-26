@@ -29,6 +29,6 @@ never mocks. Coverage gate: ≥90% on `src/` (`pyproject.toml`
 
 ## See Also
 
-- [`README.md`](README.md) - file-by-file coverage map
-- [`PATTERNS.md`](PATTERNS.md) - fixture and assertion patterns
+- [`README.md`](../docs/tests.md) - file-by-file coverage map
+- [`PATTERNS.md`](../docs/test_patterns.md) - fixture and assertion patterns
 - [`../src/AGENTS.md`](../src/AGENTS.md) - the library under test

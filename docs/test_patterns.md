@@ -59,7 +59,7 @@ def test_run_methods_analysis_writes_expected_artifacts(tmp_path):
 
 - Flat function-style tests: `def test_{what_is_being_tested}(...)`. This
   suite does not use class-based tests (no `class Test...` declarations) —
-  see [AGENTS.md](AGENTS.md) before introducing one.
+  see [AGENTS.md](../tests/AGENTS.md) before introducing one.
 - Group tests by source module: `test_<module>.py` mirrors
   `src/template_methods_paper/methods_dsl/<module>.py` one-to-one.
 
@@ -94,19 +94,19 @@ def test_dimension_of_unknown_unit_raises():
 ## Coverage Verification
 
 ```bash
-uv run pytest projects/templates/template_methods_paper/tests \
-    --cov=projects/templates/template_methods_paper/src \
+uv run --no-sync pytest tests \
+    --cov=src/template_methods_paper \
     --cov-report=term-missing \
     --cov-fail-under=90
 ```
 
 `pyproject.toml` enforces `fail_under = 90` as the CI gate. Live achieved
-coverage is tracked in [`docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md).
+coverage is tracked in [`docs/_generated/COUNTS.md`](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/docs/_generated/COUNTS.md).
 Do not delete tests to make a number work — fix the gap.
 
 ## See Also
 
-- [AGENTS.md](AGENTS.md) — Test conventions and rationale.
-- [../src/STYLE.md](../src/STYLE.md) — How source code should be structured.
-- [../scripts/CONVENTIONS.md](../scripts/CONVENTIONS.md) — How scripts use this code.
-- [../docs/testing_philosophy.md](../docs/testing_philosophy.md) — Zero-mock rationale.
+- [AGENTS.md](../tests/AGENTS.md) — Test conventions and rationale.
+- [../src/STYLE.md](source_style.md) — How source code should be structured.
+- [../scripts/CONVENTIONS.md](script_conventions.md) — How scripts use this code.
+- [../docs/testing_philosophy.md](testing_philosophy.md) — Zero-mock rationale.

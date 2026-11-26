@@ -1,146 +1,62 @@
-# Rendering Pipeline: Manuscript → PDF
+# Render and validate the methods paper
 
-The `manuscript/` directory contains the narrative components of the
-research. It is compiled into a publication-ready PDF by the template's
-rendering infrastructure. This document describes each step, what it
-produces, and how to troubleshoot failures.
+Follow the [quickstart](quickstart.md) to install the two locked environments,
+register the project, and run both analysis scripts. Install Pandoc 3.14,
+the matching pandoc-crossref 0.3.26 release, and XeLaTeX with Beamer and
+BibTeX. The pinned template provides
+`scripts/shell/setup-system-deps.sh --check` to check its system prerequisites.
 
-## Prerequisite: Mermaid diagrams need `chrome-headless-shell`
+## Prepare the manuscript fonts
 
-Several docs and manuscript sections embed ```mermaid``` blocks. Any block
-that reaches the **combined PDF** is rasterised by `mmdc` (mermaid-cli),
-which drives a **pinned** `chrome-headless-shell` via Puppeteer. If that
-Chrome build is absent from `~/.cache/puppeteer/`, the combined-PDF step
-fails with:
-
-```
-mmdc failed for inline_mermaid_0001_...: Could not find Chrome (ver. X)
-```
-
-Install it once (CI provisions it automatically; a fresh local clone does
-not):
+The PDF preamble uses JuliaMono. Install the v0.63.2 TTF family or make it
+visible to XeLaTeX for this shell. The pinned template's
+[acceptance font setup](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/.github/actions/setup-acceptance-documents/action.yml)
+records the release archive and checksum.
 
 ```bash
-npx --yes puppeteer browsers install chrome-headless-shell
+font_dir="$(mktemp -d)"
+curl -fL https://github.com/cormullion/juliamono/releases/download/v0.63.2/JuliaMono-ttf.tar.gz \
+  -o "$font_dir/JuliaMono-ttf.tar.gz"
+printf '%s  %s\n' be6517295198ec5c92bdbaad42f4f6f8d83f921d80512b79f54fe036add95c0c \
+  "$font_dir/JuliaMono-ttf.tar.gz" | shasum -a 256 -c
+tar -xzf "$font_dir/JuliaMono-ttf.tar.gz" -C "$font_dir"
+export TTFONTS="$font_dir//:"
+kpsewhich JuliaMono-Regular.ttf
 ```
 
-Per-section slide PDFs do **not** invoke `mmdc`, so "slides render but the
-combined PDF fails" is the signature of this missing dependency.
+## Source and build inputs
 
-## The Flow
+- [`manuscript/config.yaml`](manuscript/config.yaml) holds the paper title,
+  authors, publication metadata and enabled formats. The package declares
+  the vocabulary, dimension rules, and gate order in Python.
+- [`manuscript/README.md`](manuscript/README.md) lists the ordered source
+  files, bibliography, and preamble. The figure reference is relative to
+  the canonical source tree.
+- `scripts/methods_analysis.py` compiles both examples, runs the gates and
+  writes the plan exports, reports, figure and figure registry.
+- `scripts/z_generate_manuscript_variables.py` reads the config and analysis
+  results, writes `output/data/manuscript_variables.json`, and writes the
+  resolved sections into `output/manuscript/`. Set `SOURCE_DATE_EPOCH` to
+  control the build timestamp. Stage 03 reruns hydration before rendering.
 
-The pipeline has four steps. Each must complete before the next begins.
+## Run the pinned renderer
 
-### 1. Analysis
-
-**Script**: `scripts/methods_analysis.py` (from the repository root)
+From the pinned template checkout:
 
 ```bash
-uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
+uv run --no-sync python scripts/pipeline/stage_03_render.py --project working/template_methods_paper
+uv run --no-sync python scripts/pipeline/stage_04_validate.py --project working/template_methods_paper
 ```
 
-**Inputs**: `src/template_methods_paper/methods_dsl/examples_methods.py`'s worked example methods +
-the tested gate/compiler/exporter functions in `src/template_methods_paper/methods_dsl/`.
+Find the combined PDF at `output/pdf/template_methods_paper_combined.pdf`,
+HTML at `output/web/index.html`, and enabled Beamer decks in `output/slides/`
+inside the methods-paper checkout. Check the combined editions for the
+compiled-plan table, step-count figure, and resolved citations. Stage 04
+writes `output/reports/validation_report.json` and
+`output/reports/rendered_provenance.json`. The provenance report records the
+source and the render inputs.
 
-**Outputs**:
-
-| File | Location | Content |
-|---|---|---|
-| `*_worklist.md`, `*_plan.csv`, `*_graph.mmd`, `*_plan.json` (per method) | `output/data/` | Per-method exported plan |
-| `compiled_plans.json` | `output/data/` | Per-method plan summary |
-| `gate_report.json` | `output/reports/` | Staged-gate tally |
-| `trust_chain_report.json` | `output/reports/` | Provenance hash-chain demo result |
-| `step_counts.png` | `output/figures/` | Steps per example method |
-| `figure_registry.json` | `output/figures/` | Provenance record binding `fig:step_counts` to the generated PNG |
-
-### 2. Manuscript variable generation
-
-**Script**: `scripts/z_generate_manuscript_variables.py` (from the
-repository root)
-
-```bash
-uv run python projects/templates/template_methods_paper/scripts/z_generate_manuscript_variables.py
-```
-
-**Inputs**: `manuscript/config.yaml` + the `output/data` and `output/reports`
-artifacts from step 1.
-
-**Outputs**: `output/data/manuscript_variables.json` and a
-`{{TOKEN}}`-resolved manuscript tree consumed by step 3.
-
-### 3. PDF render
-
-**Script**: `scripts/pipeline/stage_03_render.py` (at the repository root, **not**
-inside `projects/`)
-
-```bash
-uv run python scripts/pipeline/stage_03_render.py --project templates/template_methods_paper
-```
-
-**Inputs**: `manuscript/*.md` (resolved) + `manuscript/config.yaml` +
-`manuscript/preamble.md` + `manuscript/references.bib`.
-
-**Infrastructure modules involved**:
-
-| Module | Role |
-|---|---|
-| `infrastructure/rendering/pdf_renderer.py` | Orchestrates Pandoc → XeLaTeX |
-| `infrastructure/rendering/manuscript_discovery.py` | Discovers and orders manuscript section files |
-| `infrastructure/rendering/manuscript_injection.py` | Resolves `{{TOKEN}}` markers via `write_resolved_manuscript_tree` |
-| `infrastructure/core/config/loader.py` | Reads `manuscript/config.yaml` for title, authors, metadata |
-
-**Outputs**: a combined publication PDF, per-section Beamer slides, and HTML
-versions of each section, all under `output/`.
-
-### 4. Copy deliverables
-
-**Script**: `scripts/pipeline/stage_05_copy.py` (at the repository root)
-
-```bash
-uv run python scripts/pipeline/stage_05_copy.py --project templates/template_methods_paper
-```
-
-**Output**: final PDF and figures copied to the repo-level
-`output/templates/template_methods_paper/` tree (used by CI artifact
-upload).
-
-## config.yaml Controls
-
-| YAML Key | Controls | Consumed by |
-|---|---|---|
-| `paper.title` | PDF title page and page headers | `infrastructure/core/config/loader.py` → `pdf_renderer.py` |
-| `paper.version` | Title page version; `{{CONFIG_VERSION}}` | `pdf_renderer.py`, `src/template_methods_paper/manuscript_variables.py` |
-| `authors[*]` | Author list on the title page; `{{CONFIG_FIRST_AUTHOR}}` | `pdf_renderer.py`, `src/template_methods_paper/manuscript_variables.py` |
-| `publication.doi` | DOI on the title page and citations | `pdf_renderer.py` |
-| `keywords` | Keyword metadata; `{{CONFIG_KEYWORDS}}` | `pdf_renderer.py`, `src/template_methods_paper/manuscript_variables.py` |
-| `render.formats.*` | Which output formats are produced | `infrastructure/rendering/config.py` |
-
-## Troubleshooting
-
-### Missing figure in PDF
-
-**Cause**: the analysis script did not generate the figure.
-
-```bash
-ls projects/templates/template_methods_paper/output/figures/*.png
-uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
-```
-
-### Unresolved `{{TOKEN}}` warning
-
-**Cause**: a manuscript file references a token `generate_variables()` does
-not emit, or the analysis step (step 1) was skipped so `require_analysis_outputs`
-fallbacks to `N/A`. Run step 1, then step 2, in order — never skip step 1.
-
-### BibTeX citation error / PDF fails to compile
-
-**Cause**: malformed entry in `manuscript/references.bib`. Check the LaTeX
-log under `output/pdf/` for the specific error.
-
-### Slides not generated
-
-**Cause**: `scripts/pipeline/stage_03_render.py` needs Pandoc with Beamer support.
-
-```bash
-pandoc --version
-```
+The pinned [project integration guide](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/projects/README.md#L208-L223),
+[manuscript resolver](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/infrastructure/core/project_paths.py#L59-L75),
+and [stage instructions](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/docs/RUN_GUIDE.md#L563-L574)
+describe the shared pipeline.

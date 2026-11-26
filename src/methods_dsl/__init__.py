@@ -1,7 +1,7 @@
 """``methods_dsl`` — a small, tested domain language for specifying controlled methods.
 
 Public surface, grouped by the BPL-inspired pipeline stage it belongs to
-(see ``docs/architecture.md`` and ``manuscript/02_methodology.md``):
+(see ``docs/architecture.md`` and ``docs/manuscript/02_methodology.md``):
 
 - **Model** (``model.py``): :class:`Method`, :class:`Step`, :class:`Resource`,
   :class:`Parameter`, :class:`MethodModelError`.

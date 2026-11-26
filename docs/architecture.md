@@ -19,7 +19,7 @@ compilation logic hiding inside a script, reusable logic trapped outside
 
 Each module corresponds to one stage of a BPL-style compiler pipeline
 (parse → semantic check → lower → schedule → execute → export); see
-`manuscript/02_methodology.md` for the full per-module mapping.
+`docs/manuscript/02_methodology.md` for the full per-module mapping.
 
 | Pipeline stage | This DSL's module |
 |---|---|
@@ -65,7 +65,7 @@ graph TD
     SC[scripts/methods_analysis.py] -->|imports| INIT
     SC -->|writes| OUT[output/data + output/reports + output/figures]
     GMV[scripts/z_generate_manuscript_variables.py] -->|reads| OUT
-    GMV -->|resolves TOKENs in| MAN[manuscript/*.md]
+    GMV -->|resolves TOKENs in| MAN[docs/manuscript/*.md]
 
     T1[tests/test_vocabulary.py] --> VOC
     T2[tests/test_units.py] --> UNI
@@ -86,7 +86,7 @@ graph TD
 |---|---|---|
 | Gate or scheduling logic inside `scripts/` | Cannot be unit-tested at the same granularity; drifts from the library | Move to `src/template_methods_paper/methods_dsl/validation.py` or `compiler.py`, add a test, call it from the script |
 | `import matplotlib` inside `src/template_methods_paper/methods_dsl/` | Breaks library purity; needs a display backend | Return text/JSON from exporters; plot in `scripts/` |
-| `from infrastructure import ...` anywhere except `_logging.py` | Breaks the standalone/forkable contract | Keep the library standalone; the one sanctioned exception is declared in `manuscript/layer_contract.yaml` |
+| `from infrastructure import ...` anywhere except `_logging.py` | Breaks the standalone/forkable contract | Keep the library standalone; the one sanctioned exception is declared in `docs/manuscript/layer_contract.yaml` |
 | Reordering or skipping a staged gate | Breaks the BPL-inspired staged short-circuit; later gates assume earlier ones passed | Always run gates via `run_all_gates`, never call `plan_gate`/`target_gate` standalone in product code |
 | Hardcoding a `plan_hash` literal in a test | Silently stops testing the moment the compiler's hash input changes | Compile the same method twice and assert hash equality live |
 | Hardcoded absolute paths | Makes copied projects brittle | Resolve paths relative to the project root via `project_paths.py` |
@@ -102,10 +102,10 @@ Follow these steps in order:
 2. **Write a test** in the matching `tests/test_*.py` — zero-mock; assert
    that `run_all_gates` passes and `compile_method` produces the expected
    step count and a stable hash; run
-   `uv run pytest projects/templates/template_methods_paper/tests --cov=projects/templates/template_methods_paper/src --cov-fail-under=90`.
+   `uv run --no-sync pytest tests --cov=src/template_methods_paper --cov-fail-under=90`.
 3. **Wire it into `scripts/methods_analysis.py`** if it should appear in the
    compiled-plan report — the script exports its plan and adds it to
    `output/data/compiled_plans.json`.
-4. **Update the manuscript** — describe it in `manuscript/05_experimental_setup.md`
-   and reference its compiled-plan row in `manuscript/03_results.md` using
+4. **Update the manuscript** — describe it in `docs/manuscript/05_experimental_setup.md`
+   and reference its compiled-plan row in `docs/manuscript/03_results.md` using
    concrete paths (e.g. `src/template_methods_paper/methods_dsl/compiler.py::compile_method()`).

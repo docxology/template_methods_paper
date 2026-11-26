@@ -1,102 +1,44 @@
-# Quick Start Guide
+# Quickstart
 
-Get up and running with the `template_methods_paper` exemplar in 5 minutes.
+Use Git, uv, and Python 3.14 for the checked workflow. The package declares
+Python 3.12 or newer. The analysis scripts and their integration tests use
+shared infrastructure from a separate, pinned template checkout.
 
-## Prerequisites
-
-- Python 3.10 or higher
-- [`uv`](https://github.com/astral-sh/uv) package manager (repo invariant — see the root `CLAUDE.md`)
-- Git
-
-## Setup (One-Time)
+From the root of the methods-paper checkout, clone the renderer and register
+a separate copy of the current project commit. Hydration runs inside the
+renderer’s project boundary and requires a physical working-project checkout.
 
 ```bash
-# 1. Clone the template repository (if you haven't already)
-git clone https://github.com/docxology/template.git
-cd template
-
-# 2. Install dependencies at the repository root
-uv sync
-
-# 3. Verify installation
-uv run python --version
+project_root="$(pwd -P)"
+git clone https://github.com/docxology/template.git ../template-renderer
+renderer_root="$(cd ../template-renderer && pwd -P)"
+git -C "$renderer_root" checkout --detach 87704feae0a4490ef7dad9c931d268e8c30273c2
+(cd "$renderer_root" && uv sync --locked --no-dev)
+mkdir -p "$renderer_root/projects/working"
+git clone "$project_root" "$renderer_root/projects/working/template_methods_paper"
+cd "$renderer_root/projects/working/template_methods_paper"
+git checkout --detach
 ```
 
-## Run the Test Suite
-
-Validate the environment and check that the project test suite passes with
-the ≥90% coverage gate:
+Install the project's locked development dependencies and run the project tests.
 
 ```bash
-uv run pytest projects/templates/template_methods_paper/tests -v --tb=short
+uv sync --locked --extra dev --python 3.14
+export PYTHONPATH="$renderer_root"
+uv run --no-sync pytest tests --cov=src/template_methods_paper --cov-fail-under=90
 ```
 
-Expected: passing tests and coverage above the 90% gate. Live collection
-counts are tracked in [`../../../docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md).
+Coverage is measured for the installed package under `src/template_methods_paper/`.
+The exported checkout also contains a legacy copy of those modules directly
+under `src/`. The tests import the installed package.
 
-## Execute the Analysis Pipeline
-
-Compile the two worked example methods, run every staged gate, export
-worklist/CSV/Mermaid/JSON, demonstrate the trust hash-chain, and plot the
-step-count figure:
+For a clean regeneration, move the tracked `output/` out of the way in
+this working checkout before running the generators. Then generate the
+analysis outputs and hydrate the manuscript.
 
 ```bash
-uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
+uv run --no-sync python scripts/methods_analysis.py
+uv run --no-sync python scripts/z_generate_manuscript_variables.py
 ```
 
-**Outputs created under `projects/templates/template_methods_paper/output/`:**
-- `data/` — per-method worklist/CSV/Mermaid/JSON exports, `compiled_plans.json`
-- `reports/` — `gate_report.json`, `trust_chain_report.json`
-- `figures/` — `step_counts.png`
-
-## Generate and Inject Manuscript Variables
-
-```bash
-uv run python projects/templates/template_methods_paper/scripts/z_generate_manuscript_variables.py
-```
-
-This reads `manuscript/config.yaml` plus the analysis outputs above and
-resolves every `{{TOKEN}}` in `manuscript/*.md`.
-
-## Render the Publication PDF
-
-```bash
-uv run python scripts/pipeline/stage_03_render.py --project templates/template_methods_paper
-```
-
-## View Results
-
-- **Exports**: browse `projects/templates/template_methods_paper/output/data/`
-- **Reports**: `cat projects/templates/template_methods_paper/output/reports/gate_report.json`
-- **Figure**: `projects/templates/template_methods_paper/output/figures/step_counts.png`
-- **PDF manuscript**: under `output/.../pdf/` after rendering
-
-## Common Next Steps
-
-- **Specify your own method**: add a new `Method` (via
-  `src/template_methods_paper/methods_dsl/model.py`'s dataclasses) to
-  `src/template_methods_paper/methods_dsl/examples_methods.py`, add a test, wire it into
-  `scripts/methods_analysis.py`, then re-run the analysis.
-- **Extend the controlled vocabulary**: only if your domain genuinely needs a
-  new `StepKind` or `Dimension` — add it to `vocabulary.py`/`units.py` with a
-  test (see `docs/architecture.md`).
-- **Modify the manuscript**: edit markdown files under `manuscript/`, then
-  re-render.
-
-## Getting Help
-
-- **Full documentation**: [`docs/README.md`](README.md) — navigation hub.
-- **Agent rules**: [`docs/agent_instructions.md`](agent_instructions.md).
-- **Troubleshooting**: [`docs/troubleshooting.md`](troubleshooting.md).
-- **FAQ**: [`docs/faq.md`](faq.md).
-
-## Quick Command Reference
-
-| Task | Command |
-|---|---|
-| Run tests | `uv run pytest projects/templates/template_methods_paper/tests -v` |
-| Run analysis | `uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py` |
-| Generate manuscript variables | `uv run python projects/templates/template_methods_paper/scripts/z_generate_manuscript_variables.py` |
-| Render PDF | `uv run python scripts/pipeline/stage_03_render.py --project templates/template_methods_paper` |
-| Copy final deliverables | `uv run python scripts/pipeline/stage_05_copy.py --project templates/template_methods_paper` |
-| Clean outputs | `rm -rf projects/templates/template_methods_paper/output/` |
+Continue with the [render and validation commands](rendering_pipeline.md).

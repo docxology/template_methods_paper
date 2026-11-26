@@ -10,7 +10,7 @@ test correctness, reproducibility, or manuscript accuracy.
 
 The most critical rule is the absolute prohibition of mocking. The following
 are **forbidden** anywhere inside
-`projects/templates/template_methods_paper/tests/`:
+`tests/`:
 
 - `import unittest.mock`
 - `from unittest.mock import MagicMock, patch, create_autospec, Mock, AsyncMock`
@@ -39,7 +39,7 @@ assert len(plan.steps) == 3
 
 **Verify cleanliness**:
 ```bash
-grep -r "unittest.mock\|MagicMock\|@patch" projects/templates/template_methods_paper/tests/ || echo "Clean"
+grep -r "unittest.mock\|MagicMock\|@patch" tests/ || echo "Clean"
 ```
 
 ---
@@ -55,7 +55,7 @@ grep -r "unittest.mock\|MagicMock\|@patch" projects/templates/template_methods_p
 
 **Verify `src/template_methods_paper/methods_dsl/` is clean outside the declared exception**:
 ```bash
-grep -rnE "^(from|import) infrastructure" projects/templates/template_methods_paper/src/template_methods_paper/methods_dsl/ \
+grep -rnE "^(from|import) infrastructure" src/template_methods_paper/methods_dsl/ \
     | grep -v "_logging.py" || echo "Clean"
 ```
 
@@ -109,11 +109,11 @@ Refer to files by their path relative to the repository root:
 
 | Short Name | Path (from repo root) |
 |---|---|
-| method model | `projects/templates/template_methods_paper/src/template_methods_paper/methods_dsl/model.py` |
-| compiler | `projects/templates/template_methods_paper/src/template_methods_paper/methods_dsl/compiler.py` |
-| analysis script | `projects/templates/template_methods_paper/scripts/methods_analysis.py` |
-| config | `projects/templates/template_methods_paper/manuscript/config.yaml` |
-| worked examples | `projects/templates/template_methods_paper/src/template_methods_paper/methods_dsl/examples_methods.py` |
+| method model | `src/template_methods_paper/methods_dsl/model.py` |
+| compiler | `src/template_methods_paper/methods_dsl/compiler.py` |
+| analysis script | `scripts/methods_analysis.py` |
+| config | `manuscript/config.yaml` |
+| worked examples | `src/template_methods_paper/methods_dsl/examples_methods.py` |
 
 Never hardcode an absolute filesystem path in code — resolve relative to the
 project root (see `src/template_methods_paper/project_paths.py`).

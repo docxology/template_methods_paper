@@ -6,7 +6,7 @@ controlled methods** — the **methods-paper exemplar** of the
 results paper, this manuscript's subject is the methodology itself: a
 controlled vocabulary, a unit system with dimensional safety, four staged
 validation gates, and a deterministic compiler, implemented in
-`projects/templates/template_methods_paper/src/template_methods_paper/methods_dsl/` and described
+`src/template_methods_paper/methods_dsl/` and described
 section by section in [@sec:methodology]. The domain language's vocabulary is
 informed by BPL (Biology Programming Language,
 [@bpl2026]), an upstream reference that encodes laboratory protocols as

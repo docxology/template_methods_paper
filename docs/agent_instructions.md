@@ -34,14 +34,14 @@ The suite spans `test_vocabulary.py`, `test_units.py`, `test_model.py`,
 `test_manuscript_variables.py`, and `test_methods_analysis_script.py`. Both
 the project `pyproject.toml` and the root pipeline gate coverage at **90%**.
 Live test count and coverage live in
-[`docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md) — do
+[`docs/_generated/COUNTS.md`](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/docs/_generated/COUNTS.md) — do
 not hardcode either number in prose.
 
 After modifying any `src/template_methods_paper/methods_dsl/` module, run:
 
 ```bash
-uv run pytest projects/templates/template_methods_paper/tests \
-    --cov=projects/templates/template_methods_paper/src \
+uv run --no-sync pytest tests \
+    --cov=src/template_methods_paper \
     --cov-fail-under=90 --cov-report=term-missing -v
 ```
 
@@ -76,7 +76,7 @@ plan = compile_method(method)  # tested src function
 
 ## Rule 4: "Show, Not Tell" Documentation
 
-Use explicit, verifiable references in `manuscript/` files.
+Use explicit, verifiable references in `docs/manuscript/` files.
 
 **GOOD**: `src/template_methods_paper/methods_dsl/compiler.py::topological_order()` schedules steps
 with Kahn's algorithm, breaking ties by ascending `step_id`.
@@ -99,7 +99,7 @@ hardcoded hash string literal.
 
 - **[`style_guide.md`](style_guide.md)** governs `src/template_methods_paper/methods_dsl/*.py`,
   `tests/`, and `scripts/`.
-- **[`syntax_guide.md`](syntax_guide.md)** governs `manuscript/*.md`.
+- **[`syntax_guide.md`](syntax_guide.md)** governs `docs/manuscript/*.md`.
 
 Do not apply code-style rules to manuscript prose or vice versa.
 
@@ -114,7 +114,7 @@ run. To change what a generated file contains, change the **generator**:
   `output/reports/gate_report.json`, `output/reports/trust_chain_report.json`,
   or `output/figures/step_counts.png` → modify `src/template_methods_paper/methods_dsl/` and/or
   `scripts/methods_analysis.py`, then re-run the script.
-- To change the rendered PDF → modify the `manuscript/*.md` source, then
+- To change the rendered PDF → modify the `docs/manuscript/*.md` source, then
   re-render via `scripts/z_generate_manuscript_variables.py` and
   `scripts/pipeline/stage_03_render.py`.
 
@@ -126,16 +126,16 @@ See [`output_conventions.md`](output_conventions.md).
 
 ```bash
 # 1. Tests pass and coverage gate is met
-uv run pytest projects/templates/template_methods_paper/tests \
-    --cov=projects/templates/template_methods_paper/src --cov-fail-under=90 -q
+uv run --no-sync pytest tests \
+    --cov=src/template_methods_paper --cov-fail-under=90 -q
 
 # 2. No mocks anywhere in tests/
 grep -r "unittest.mock\|MagicMock\|@patch\|create_autospec" \
-    projects/templates/template_methods_paper/tests/ || echo "Clean — no mocks found"
+    tests/ || echo "Clean — no mocks found"
 
 # 3. The DSL library has no unsanctioned infrastructure imports
 grep -rnE "^(from|import) infrastructure" \
-    projects/templates/template_methods_paper/src/template_methods_paper/methods_dsl/ \
+    src/template_methods_paper/methods_dsl/ \
     | grep -v "_logging.py" \
     && echo "VIOLATION — src/template_methods_paper/methods_dsl/ imports infrastructure outside _logging.py" \
     || echo "Clean — only the declared _logging.py exception imports infrastructure"

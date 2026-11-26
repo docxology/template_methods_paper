@@ -15,7 +15,7 @@ its central subject.
 
 - Keep this subpackage standalone: import only stdlib, except
   `_logging.py`'s single sanctioned `infrastructure.core.logging.utils`
-  import (declared in `manuscript/layer_contract.yaml`). No other module here
+  import (declared in `docs/manuscript/layer_contract.yaml`). No other module here
   imports `infrastructure.*` or a sibling project.
 - Never render plots or write files here. Exporters return text
   (`to_worklist_markdown`, `to_csv_rows`, `to_mermaid`, `to_json`) or take an
@@ -32,6 +32,6 @@ its central subject.
 
 ## See Also
 
-- [`README.md`](README.md) - module-by-module file listing
+- [`README.md`](../../../docs/dsl.md) - module-by-module file listing
 - [`../AGENTS.md`](../AGENTS.md) - source-layer contract
-- [`../../../docs/architecture.md`](../../../docs/architecture.md) - correspondence with BPL's compiler pipeline
+- [`../../../docs/architecture.md`](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/docs/architecture.md) - correspondence with BPL's compiler pipeline

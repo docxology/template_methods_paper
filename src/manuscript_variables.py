@@ -1,7 +1,7 @@
 """Manuscript variable generation for the template_methods_paper exemplar.
 
 Reads:
-- ``manuscript/config.yaml``                       — paper metadata
+- ``docs/manuscript/config.yaml``                       — paper metadata
 - ``output/data/compiled_plans.json``               — per-example-method compiled plan summaries
 - ``output/reports/gate_report.json``                — validation-gate pass counts
 - ``output/reports/trust_chain_report.json``         — demo provenance-chain verification result
@@ -13,7 +13,7 @@ substitution via
 Domain ``src/`` (this file included) stays standalone — no ``infrastructure``
 import — per the same convention ``template_code_project`` documents; the
 project's one sanctioned exception is ``src/methods_dsl/_logging.py``,
-declared in ``manuscript/layer_contract.yaml``.
+declared in ``docs/manuscript/layer_contract.yaml``.
 
 Called exclusively by ``scripts/z_generate_manuscript_variables.py``
 (thin orchestrator).
@@ -60,8 +60,15 @@ def _build_timestamp() -> str:
 # ---------------------------------------------------------------------------
 
 
+def _config_path(project_root: Path) -> Path:
+    canonical = project_root / "docs" / "manuscript" / "config.yaml"
+    if canonical.is_file():
+        return canonical
+    return project_root / "manuscript" / "config.yaml"
+
+
 def _load_config(project_root: Path) -> dict[str, Any]:
-    config_path = project_root / "manuscript" / "config.yaml"
+    config_path = _config_path(project_root)
     if not config_path.exists():
         return {}
     with config_path.open("r") as f:
@@ -87,7 +94,7 @@ def _load_json_report(project_root: Path, name: str) -> dict[str, Any]:
 
 
 def _compute_config_hash(project_root: Path) -> str:
-    config_path = project_root / "manuscript" / "config.yaml"
+    config_path = _config_path(project_root)
     if not config_path.exists():
         return "N/A"
     return hashlib.sha256(config_path.read_bytes()).hexdigest()[:CONFIG_HASH_LENGTH]
@@ -120,7 +127,7 @@ def generate_variables(project_root: Path, *, require_analysis_outputs: bool = F
 
     Args:
         project_root: Root directory of the methods-paper project (the
-            directory containing ``manuscript/`` and ``output/``).
+            directory containing ``docs/manuscript/`` and ``output/``).
         require_analysis_outputs: When True, raise if
             ``output/data/compiled_plans.json`` is missing or empty.
 

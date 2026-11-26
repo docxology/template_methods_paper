@@ -2,7 +2,7 @@
 
 This section reports the compiled plans for both worked example methods.
 Every number below is produced by the
-[methods analysis orchestrator](https://github.com/docxology/template/blob/main/projects/templates/template_methods_paper/scripts/methods_analysis.py)
+[methods analysis orchestrator](https://github.com/docxology/template_methods_paper/blob/main/scripts/methods_analysis.py)
 (`scripts/methods_analysis.py`),
 which calls `run_all_gates` and `compile_method` from `src/template_methods_paper/methods_dsl/` and
 writes `output/data/compiled_plans.json`, `output/reports/gate_report.json`,
@@ -30,7 +30,7 @@ protocols, as [@sec:introduction] claims.
 
 [@fig:step_counts] plots the step count for each compiled method.
 
-![Steps per example method: a bar chart built from `len(plan.steps)` for each plan in `output/data/compiled_plans.json`, plotted by `scripts/methods_analysis.py`.](../output/figures/step_counts.png){#fig:step_counts}
+![Steps per example method: a bar chart built from `len(plan.steps)` for each plan in `output/data/compiled_plans.json`, plotted by `scripts/methods_analysis.py`.](../../output/figures/step_counts.png){#fig:step_counts}
 
 ## Validation gates
 
@@ -71,7 +71,7 @@ The results were validated through the zero-mock `tests/` suite:
   root and confirms real worklist/CSV/Mermaid/JSON artifacts, reports, and a
   real PNG figure are written.
 - **Manuscript-variable test** confirms every generated-variable name used in
-  `manuscript/*.md` is emitted by `generate_variables`.
+  `docs/manuscript/*.md` is emitted by `generate_variables`.
 
 All tests pass under the configured project coverage gate, with no mocks.
 

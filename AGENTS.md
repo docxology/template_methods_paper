@@ -1,7 +1,6 @@
 # A Domain Language for Specifying Controlled Methods — agent guide
 
-**This is an active project** in the `projects/` directory, discovered and
-executed by infrastructure discovery functions. Public exemplar roster:
+Register this standalone checkout as a working project for the shared renderer. Public exemplar roster:
 [`projects/AGENTS.md`](https://github.com/docxology/template/blob/main/projects/AGENTS.md#permanent-canonical-exemplars).
 Publication DOI layout:
 [`docs/guides/zenodo-doi-strategy.md`](https://github.com/docxology/template/blob/main/docs/guides/zenodo-doi-strategy.md).
@@ -32,14 +31,14 @@ procedure.
 
 The boundary is enforced by `check_project_src_infrastructure_boundary` via
 `scripts/audit/check_template_drift.py --strict` and
-[`manuscript/layer_contract.yaml`](manuscript/layer_contract.yaml).
+[`docs/manuscript/layer_contract.yaml`](docs/manuscript/layer_contract.yaml).
 
 ## Configuration as the source of truth
 
-`manuscript/config.yaml` is the configuration single source of truth for
+`docs/manuscript/config.yaml` is the configuration single source of truth for
 paper title, authors, keywords, version, and publication metadata; it is
 mirrored by a sanitized
-[`manuscript/config.yaml.example`](manuscript/config.yaml.example) with the
+[`docs/manuscript/config.yaml.example`](docs/manuscript/config.yaml.example) with the
 same top-level sections. The controlled vocabulary (units, step kinds,
 targets, gate order) is declared in code
 (`src/template_methods_paper/methods_dsl/units.py`, `vocabulary.py`, `validation.py`), not
@@ -64,26 +63,12 @@ readers without driving it.
   `output/`, emits its deterministic figure registry, and prints output paths
   for manifest collection.
 
-## Run via the template monorepo
+## Build and verification
 
-```bash
-# From the repository root — run the methods analysis pipeline (thin orchestrator)
-uv run python projects/templates/template_methods_paper/scripts/methods_analysis.py
-# Writes output/data/*, output/reports/*, output/figures/step_counts.png,
-# and output/figures/figure_registry.json
-```
-
-## Testing
-
-```bash
-# Run project tests with the 90% coverage gate (configuration source of truth: pyproject.toml)
-uv run pytest projects/templates/template_methods_paper/tests \
-    --cov=projects/templates/template_methods_paper/src --cov-fail-under=90
-```
-
-Live test count and achieved coverage:
-[`docs/_generated/COUNTS.md`](https://github.com/docxology/template/blob/main/docs/_generated/COUNTS.md) — do not
-copy the numbers here.
+Use the [quickstart](docs/quickstart.md) for the locked standalone package,
+native coverage gate, analysis scripts, and pinned renderer registration.
+The [render guide](docs/rendering_pipeline.md) records the Stage 03 and 04
+commands and artifact locations.
 
 ## Advisory research overlays (validation inputs, not autonomous agents)
 
@@ -116,6 +101,6 @@ quick reference commands, and pitfalls.
 
 - [Root projects AGENTS.md](https://github.com/docxology/template/blob/main/projects/AGENTS.md#permanent-canonical-exemplars) — public exemplar roster.
 - [Publishing guide](https://github.com/docxology/template/blob/main/docs/guides/publishing-guide.md) · [Zenodo DOI strategy](https://github.com/docxology/template/blob/main/docs/guides/zenodo-doi-strategy.md).
-- [`manuscript/SYNTAX.md`](manuscript/SYNTAX.md) — Pandoc citation/cross-reference syntax.
+- [`docs/manuscript/SYNTAX.md`](docs/manuscript/SYNTAX.md) — Pandoc citation/cross-reference syntax.
 - [`src/AGENTS.md`](src/template_methods_paper/AGENTS.md) / [`src/methods_dsl/AGENTS.md`](src/template_methods_paper/methods_dsl/AGENTS.md) — DSL library API reference.
-- [`TODO.md`](TODO.md) — template-status gaps and improvement ladder.
+- [Maintenance backlog](docs/backlog.md) — template-status gaps and improvement ladder.

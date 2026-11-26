@@ -22,9 +22,12 @@ specification library.
 
 ## Run
 
+Use the standalone project environment and set `PYTHONPATH` as shown in
+the [quickstart](quickstart.md).
+
 ```bash
-uv run pytest projects/templates/template_methods_paper/tests \
-  --cov=projects/templates/template_methods_paper/src --cov-fail-under=90
+uv run --no-sync pytest tests \
+  --cov=src/template_methods_paper --cov-fail-under=90
 ```
 
-Conventions and rationale: [`AGENTS.md`](AGENTS.md) and [`PATTERNS.md`](PATTERNS.md).
+Conventions and rationale: [`AGENTS.md`](../tests/AGENTS.md) and [`PATTERNS.md`](test_patterns.md).

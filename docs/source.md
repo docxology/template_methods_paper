@@ -1,15 +1,17 @@
 # src/ — Methods Specification DSL
 
 The tested controlled-method specification library for the exemplar. All
-logic lives in the `template_methods_paper.methods_dsl` subpackage and is re-exported from
-`src/template_methods_paper/__init__.py`. The library is standalone except one declared logging
-adapter (see [AGENTS.md](AGENTS.md)): no plotting, no file I/O in the DSL
+logic lives in the `template_methods_paper.methods_dsl` subpackage (at
+`src/template_methods_paper/methods_dsl/`) and is re-exported from
+`src/template_methods_paper/__init__.py` (`src/__init__.py` is a namespace
+shim). The library is standalone except one declared logging
+adapter (see [AGENTS.md](../src/template_methods_paper/AGENTS.md)): no plotting, no file I/O in the DSL
 itself, no other `infrastructure.*` imports.
 
 ## Quick Start
 
 ```python
-from src import all_example_methods, run_all_gates, compile_method
+from template_methods_paper import all_example_methods, run_all_gates, compile_method
 
 method = all_example_methods()[0]
 assert all(g.passed for g in run_all_gates(method))
@@ -31,8 +33,7 @@ print(plan.method_name, plan.plan_hash[:12], len(plan.steps))
 ## Run Tests
 
 ```bash
-cd projects/templates/template_methods_paper
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --no-sync pytest tests/ --cov=src/template_methods_paper --cov-fail-under=90
 ```
 
 ## Architecture
@@ -46,7 +47,7 @@ graph TD
     CMP --> EXP[export.py]
     TRU[trust.py]
     EX2[examples_methods.py] --> MDL
-    INIT[__init__.py] --> VOC
+    INIT[template_methods_paper/__init__.py] --> VOC
     INIT --> UNI
     INIT --> MDL
     INIT --> VAL
@@ -58,6 +59,6 @@ graph TD
 
 ## More Information
 
-See [AGENTS.md](AGENTS.md) for the API reference and infrastructure-boundary
-contract, and [STYLE.md](../STYLE.md) for the code-style and `__all__` export
+See [AGENTS.md](../src/template_methods_paper/AGENTS.md) for the API reference and infrastructure-boundary
+contract, and [STYLE.md](source_style.md) for the code-style and `__all__` export
 contract.
