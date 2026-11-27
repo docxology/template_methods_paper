@@ -18,14 +18,26 @@ Additional locations are config-declared publication evidence; the central index
 
 ## Refresh the publishing status
 
-Edit [`manuscript/config.yaml`](manuscript/config.yaml). From the pinned
-template checkout, with the project [registered](quickstart.md), pass the
-canonical config explicitly.
+Edit the canonical manuscript configuration. [manuscript/config.yaml](manuscript/config.yaml)
+
+From the methods-paper checkout, prepare a sibling Template checkout for the
+status generator. This revision recognizes `docs/manuscript/config.yaml`.
 
 ```bash
-report_root="$(realpath projects/working/template_methods_paper)"
-uv run --no-sync python -m infrastructure.publishing.status_report \
-  --project "$report_root" --config "$report_root/docs/manuscript/config.yaml" --write
+git clone --filter=blob:none https://github.com/docxology/template.git ../methods-status-template
+git -C ../methods-status-template checkout --detach 8b2af45ba858e8419e1d9452610c261344ee8e6c
+(cd ../methods-status-template && uv sync --locked --no-dev)
+```
+
+Run the refresh from the methods-paper checkout.
+
+```bash
+report_root="$(pwd -P)"
+(
+  cd ../methods-status-template
+  uv run --no-sync python -m infrastructure.publishing.status_report \
+    --project "$report_root" --config "$report_root/docs/manuscript/config.yaml" --write
+)
 ```
 
 The version 1.0.0 deposit is historical. The status of the intended version and

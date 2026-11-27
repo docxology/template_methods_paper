@@ -112,7 +112,7 @@ Refer to files by their path relative to the repository root:
 | method model | `src/template_methods_paper/methods_dsl/model.py` |
 | compiler | `src/template_methods_paper/methods_dsl/compiler.py` |
 | analysis script | `scripts/methods_analysis.py` |
-| config | `manuscript/config.yaml` |
+| config | `docs/manuscript/config.yaml` |
 | worked examples | `src/template_methods_paper/methods_dsl/examples_methods.py` |
 
 Never hardcode an absolute filesystem path in code — resolve relative to the
