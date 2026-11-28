@@ -1,19 +1,12 @@
 # Reproducibility {#sec:reproducibility}
 
-This section describes a fresh analysis and render from a disposable
-working checkout. The analysis and manuscript-variable scripts provide the
-values used by the reader build.
-
 ## Regenerate the standard outputs
 
-The standalone checkout supplies the methods library and the two analysis
-entry points. With that checkout registered as a working project in the
-pinned template renderer, run the following from the working checkout.
-`renderer_root` is the absolute path to the template checkout at commit
-`87704feae0a4490ef7dad9c931d268e8c30273c2`. Move the tracked `output/`
-directory outside this working checkout before running either generator.
-Keep it as the earlier publication snapshot and use a fresh `output/` for
-the new build.
+Register a disposable standalone checkout as a working project in Template
+at commit `87704feae0a4490ef7dad9c931d268e8c30273c2`. Set `renderer_root`
+to the absolute path of that Template checkout. Move the tracked `output/`
+outside the working checkout to preserve the earlier publication snapshot,
+then run these commands from the working checkout to generate fresh output.
 
 ```bash
 uv sync --locked --extra dev --python 3.14
@@ -22,8 +15,7 @@ PYTHONPATH="$renderer_root" uv run --no-sync python scripts/methods_analysis.py
 PYTHONPATH="$renderer_root" uv run --no-sync python scripts/z_generate_manuscript_variables.py
 ```
 
-From the pinned template checkout, with its own locked environment installed,
-run the render and validation stages.
+From the pinned Template checkout with its locked environment installed, run the render and validation stages.
 
 ```bash
 uv run --no-sync python scripts/pipeline/stage_03_render.py --project working/template_methods_paper
@@ -68,11 +60,9 @@ artifacts in the saved snapshot alongside their original evidence.
 
 ## Verification (no hand-transcribed numbers)
 
-Every quantitative claim in [@sec:results] is either a generated variable
-sourced from a live analysis output or registered in `data/claim_ledger.yaml` for
-evidence-registry validation. The manuscript intentionally does not
-hand-transcribe volatile values, so prose and artifacts cannot disagree.
-Configuration provenance is injected. The value `{{CONFIG_HASH}}` is the
-SHA-256 prefix of `docs/manuscript/config.yaml` at build time, and
-`{{GENERATION_TIMESTAMP}}` records when the variables were generated
-(honoring `SOURCE_DATE_EPOCH` for byte-reproducible builds).
+Each quantitative claim in [@sec:results] is generated from analysis output
+or listed in `data/claim_ledger.yaml` for evidence-registry validation.
+`{{CONFIG_HASH}}` gives the build-time SHA-256 prefix of
+`docs/manuscript/config.yaml`. `{{GENERATION_TIMESTAMP}}` records when the
+variables were generated, honoring `SOURCE_DATE_EPOCH` for byte-reproducible
+builds.
