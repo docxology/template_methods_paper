@@ -73,15 +73,19 @@ are written.
 
 ### How do I add a new figure?
 
-1. Add the plotting call to `scripts/methods_analysis.py` (matplotlib stays
-   in `scripts/`, never in `src/template_methods_paper/methods_dsl/`) and write the PNG to
-   `output/figures/`.
-2. In `docs/manuscript/03_results.md`, add a Pandoc image line:
+1. Declare the figure in
+   [`METHODS_FIGURE_SPECS`](../src/template_methods_paper/figure_specs.py)
+   with its label, PNG filename, caption, alt text, and generator.
+2. Add the plotting call to `scripts/methods_analysis.py` and write the PNG
+   under `output/figures/`. Include its path in the list passed to
+   `write_generated_figure_registry`.
+3. In `docs/manuscript/03_results.md`, use the registered filename and label
+   in the Pandoc image line.
    ```markdown
    ![Caption text.](../../output/figures/my_figure.png){#fig:my_label}
    ```
-3. Reference it in prose: `See [@fig:my_label].`
-4. Update [`syntax_guide.md`](syntax_guide.md) with the new figure label.
+4. Reference the figure in prose with `[@fig:my_label]` and update
+   [`syntax_guide.md`](syntax_guide.md) with its label.
 
 ### Does this exemplar use `{{VARIABLE}}` token injection?
 
