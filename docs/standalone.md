@@ -40,7 +40,18 @@ report_root="$(pwd -P)"
 )
 ```
 
-The version 1.0.0 deposit is historical. The status of the intended version and
-the references carried forward from earlier releases are recorded in the
-manuscript configuration. See the [publication consistency review](publication_consistency_review.md)
-for an example of how current source and an archived PDF can differ.
+Cite the archived PDF by its version DOI. For the current manuscript source,
+record the exact Git commit you used.
+[Archived PDF record](https://zenodo.org/records/21086549) ·
+[Current manuscript source](manuscript/README.md)
+
+The root citation sidecars describe the v1.0.0 software release. The CFF uses a
+bare author ORCID, and the shared exporter's URL correction is under review.
+[CFF](../CITATION.cff) · [CodeMeta](../codemeta.json) ·
+[Zenodo metadata](../.zenodo.json) · [Template #361](https://github.com/docxology/template/issues/361)
+
+The manuscript configuration records the intended version and references
+carried forward from earlier releases. The publication consistency review
+compares current source with the archived PDF.
+[Manuscript configuration](manuscript/config.yaml) ·
+[Publication consistency review](publication_consistency_review.md)
