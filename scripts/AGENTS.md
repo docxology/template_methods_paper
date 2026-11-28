@@ -51,8 +51,8 @@ uv run --no-sync python scripts/z_generate_manuscript_variables.py
 2. Runs all four staged validation gates per method (`run_all_gates`) and
    tallies a gate report.
 3. Deterministically compiles each validated method to a `Plan`
-   (`compile_method`) and exports it as worklist markdown, CSV, Mermaid, and
-   canonical JSON.
+   (`compile_method`) and exports it as worklist Markdown, CSV, Mermaid, and
+   formatted JSON.
 4. Writes a per-method `compiled_plans.json` summary consumed by
    `src/template_methods_paper/manuscript_variables.py`.
 5. Demonstrates a provenance hash-chain (`append_record`/`verify_chain`)

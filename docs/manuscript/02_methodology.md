@@ -80,11 +80,10 @@ secondary failures.
 `MethodValidationError` (carrying every failed gate's issues) if any gate
 fails. On success, `topological_order` schedules the validated steps with
 Kahn's algorithm [@kahn1962topological]: repeatedly remove a step whose
-dependencies are all already scheduled, breaking ties by ascending
-`step_id` so the same method always yields the same order — Python does not
-guarantee dict/set iteration order is stable for this purpose, so the
-tie-break is explicit, not incidental. The scheduled steps are then encoded
-as a canonical, sort-keys JSON payload and hashed with SHA-256
+dependencies are all already scheduled, choosing the smallest
+`step_id` among the eligible steps. This tie-break makes the schedule
+independent of the order of the input steps. The scheduled steps are then encoded
+as compact JSON with sorted keys, encoded as UTF-8, and hashed with SHA-256
 (`_compute_plan_hash`) into `Plan.plan_hash`. Because the hash is computed
 purely from `method_name`, `method_version`, `target`, and each step's
 `step_id`/`name`/`kind`/`target`/scheduled `order` — never from a wall-clock
@@ -97,9 +96,27 @@ A compiled `Plan` renders to four formats, mirroring BPL's "CSV/XLSX
 worklists, workflow graphs" export surface at a scope appropriate for a
 template exemplar: `to_worklist_markdown` (a numbered, human-readable
 worklist), `to_csv_rows`/`write_csv` (machine-readable rows), `to_mermaid`
-(a `flowchart TD` showing scheduled order), and `to_json`/`write_json` (the
-exact canonical JSON the plan hash was computed over, so a reader can
-independently verify `Plan.plan_hash` by re-hashing the exported file).
+(a `flowchart TD` showing scheduled order), and `to_json`/`write_json`
+(formatted JSON with sorted keys, two-space indentation, and a final newline).
+
+To verify `Plan.plan_hash`, parse the exported JSON and serialize that value
+using the compiler's compact settings. The remaining `json.dumps` options use
+Python's defaults, including `ensure_ascii=True` and no indentation. Hash the
+UTF-8 encoding of the resulting string directly.
+
+```python
+import hashlib
+import json
+from pathlib import Path
+
+path = Path("output/data/pbspreparation_plan.json")
+payload = json.loads(path.read_text(encoding="utf-8"))
+compact = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+digest = hashlib.sha256(compact.encode("utf-8")).hexdigest()
+```
+
+Compare `digest` to the corresponding `plan_hash` in
+`output/data/compiled_plans.json`.
 
 ## Provenance (`trust.py`)
 

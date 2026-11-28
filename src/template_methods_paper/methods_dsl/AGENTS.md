@@ -17,10 +17,9 @@ its central subject.
   `_logging.py`'s single sanctioned `infrastructure.core.logging.utils`
   import (declared in `docs/manuscript/layer_contract.yaml`). No other module here
   imports `infrastructure.*` or a sibling project.
-- Never render plots or write files here. Exporters return text
-  (`to_worklist_markdown`, `to_csv_rows`, `to_mermaid`, `to_json`) or take an
-  explicit `path: Path` (`write_csv`, `write_json`); matplotlib and the
-  output-directory layout stay in `scripts/` (thin-orchestrator contract).
+- Keep plotting and output-path selection in `scripts/`. Formatters such as
+  `to_json` and `to_csv_rows` return data. Writers such as `write_csv` and
+  `write_json` accept explicit paths.
 - Run validation gates in the fixed order `run_all_gates` defines
   (structural → semantic → plan → target); never reorder or skip a gate
   inside `compile_method`.

@@ -1,9 +1,8 @@
-"""Plan exporters: worklist markdown, CSV, Mermaid graph, canonical JSON.
+"""Plan exporters for worklist Markdown, CSV, Mermaid graphs, and formatted JSON.
 
-Mirrors BPL's export surface ("CSV/XLSX worklists, workflow graphs
-(Mermaid/JSON/ReactFlow)") at a scope appropriate for a template exemplar:
-CSV and Mermaid text, plus the canonical JSON the plan hash is computed over
-(so a reader can independently verify :data:`Plan.plan_hash`).
+The JSON export represents the plan hash payload with indentation and a
+trailing newline. Re-encode that value as compact, sorted JSON to verify
+:data:`Plan.plan_hash`. Writers use paths supplied by their callers.
 """
 
 from __future__ import annotations
@@ -35,7 +34,7 @@ def to_csv_rows(plan: Plan) -> list[str]:
 
 
 def write_csv(plan: Plan, path: Path) -> Path:
-    """Write *plan* as CSV to *path* and return the resolved path."""
+    """Write *plan* as CSV to *path* and return that path."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(to_csv_rows(plan)) + "\n", encoding="utf-8")
     return path
@@ -54,7 +53,7 @@ def to_mermaid(plan: Plan) -> str:
 
 
 def to_json(plan: Plan) -> str:
-    """Return the canonical JSON encoding :data:`Plan.plan_hash` was computed over."""
+    """Return the plan payload as sorted, indented JSON with a final newline."""
     return json.dumps(plan.to_canonical_dict(), sort_keys=True, indent=2) + "\n"
 
 
@@ -71,14 +70,14 @@ def export_receipt(plan: Plan) -> dict[str, object]:
 
 
 def write_json(plan: Plan, path: Path) -> Path:
-    """Write *plan*'s canonical JSON to *path* and return the resolved path."""
+    """Write the formatted plan JSON to *path* and return that path."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(to_json(plan), encoding="utf-8")
     return path
 
 
 def write_json_report(payload: dict[str, object] | list[dict[str, object]], path: Path) -> Path:
-    """Write an arbitrary JSON-serializable *payload* to *path* and return it.
+    """Write a JSON-serializable *payload* to *path* and return the path.
 
     Generic counterpart to :func:`write_json` for non-:class:`Plan` report
     payloads (gate counts, the compiled-plan summary, the trust-chain demo
@@ -91,7 +90,7 @@ def write_json_report(payload: dict[str, object] | list[dict[str, object]], path
 
 
 def write_all_exports(plan: Plan, data_dir: Path) -> list[Path]:
-    """Write worklist markdown, CSV, Mermaid, and canonical JSON for *plan* under *data_dir*.
+    """Write worklist Markdown, CSV, Mermaid, and formatted JSON for *plan* under *data_dir*.
 
     The four filenames are derived from ``plan.method_name.lower()``. Returns
     the four written paths in worklist/CSV/Mermaid/JSON order — the single

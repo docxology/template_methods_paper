@@ -86,12 +86,12 @@ uv run --no-sync pytest tests/ --cov=src/template_methods_paper --cov-report=ter
 
 ## Structural Rule: If You Need a Mock, Move the Code
 
-- **`src/template_methods_paper/methods_dsl/*`** — pure model/validation/compilation/export/trust
-  logic; no plotting, no file I/O, no `infrastructure.*` imports except the
-  one declared exception in `_logging.py`.
-- **`scripts/methods_analysis.py`** — the only place matplotlib and file
-  writes live; tested by `test_methods_analysis_script.py` against a temp
-  root.
+- **`src/template_methods_paper/methods_dsl/*`** — the model, validation, and
+  compiler work on supplied data. Export writers accept explicit paths and
+  are tested with real temporary files. `_logging.py` is the declared
+  `infrastructure.*` import exception.
+- **`scripts/methods_analysis.py`** chooses output paths and plots results.
+  `test_methods_analysis_script.py` exercises it against a temporary root.
 
 ## Running the Gate
 

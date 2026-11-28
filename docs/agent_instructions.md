@@ -51,14 +51,13 @@ If coverage drops, fix the gap — do not delete tests to make the number work.
 
 ## Rule 3: The Thin Orchestrator Boundary
 
-**`src/template_methods_paper/methods_dsl/*.py`** contains the controlled vocabulary, the unit
-system, the model, the staged gates, the compiler, the exporters, and the
-trust module: no plotting, no file I/O, no `infrastructure.*` imports except
-the one declared exception in `_logging.py`.
+The DSL model, validation, and compiler work on supplied data. Export
+writers in `src/template_methods_paper/methods_dsl/export.py` accept explicit
+paths. `_logging.py` is the one declared `infrastructure.*` import exception.
 
 **`scripts/methods_analysis.py`** and **`scripts/z_generate_manuscript_variables.py`**
-coordinate: they call `src` functions, plot the step-count figure, write
-files, and resolve manuscript tokens.
+coordinate the library calls, choose output paths, and handle plotting and
+manuscript hydration.
 
 **The boundary test**: if a script implements a validation gate, computes a
 plan hash, or constructs DAG scheduling logic inline, it violates the
@@ -105,10 +104,11 @@ Do not apply code-style rules to manuscript prose or vice versa.
 
 ---
 
-## Rule 7: `output/` Is Disposable — Never Edit Generated Files
+## Rule 7: Preserve Publication Snapshots and Regenerate Outputs
 
-The entire `output/` tree is written by the pipeline and overwritten on every
-run. To change what a generated file contains, change the **generator**:
+Keep the tracked `output/` snapshot as publication evidence. Move it aside
+in a disposable working checkout before a fresh build. To change a
+generated file, change its producer and rerun it.
 
 - To change `output/data/compiled_plans.json`,
   `output/reports/gate_report.json`, `output/reports/trust_chain_report.json`,

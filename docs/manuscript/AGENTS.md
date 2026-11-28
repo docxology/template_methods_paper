@@ -30,7 +30,7 @@ remains the configuration source of truth for paper metadata.
 | `03_results.md` | The compiled-plan table and step-count figure |
 | `04_conclusion.md` | What the DSL guarantees; how to fork it |
 | `05_experimental_setup.md` | Controlled vocabulary, worked examples, software environment |
-| `06_reproducibility.md` | Artifact inventory and how to regenerate everything |
+| `06_reproducibility.md` | Standard build outputs and how to preserve the earlier snapshot |
 | `07_scope_and_related_work.md` | Scope limits and positioning against BPL |
 | `config.yaml` | Paper metadata + publication block — the configuration source of truth |
 | `config.yaml.example` | Reference copy with the same top-level sections |
