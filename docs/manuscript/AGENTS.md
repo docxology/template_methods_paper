@@ -62,11 +62,15 @@ figure is produced by the thin analysis script from compiled-plan data in
 
 **To add a new figure**:
 
-1. Add the plotting call to
-   [`../scripts/methods_analysis.py`](../../scripts/methods_analysis.py)
-   (matplotlib stays in `scripts/`, never in `src/template_methods_paper/methods_dsl/`) and write
-   the PNG under `output/figures/`.
-2. Reference it in a manuscript section with a Pandoc image line and `{#fig:…}`.
+1. Declare the figure in
+   [`METHODS_FIGURE_SPECS`](../../src/template_methods_paper/figure_specs.py)
+   with its label, PNG filename, caption, alt text, and generator.
+2. Add the plotting call to
+   [`scripts/methods_analysis.py`](../../scripts/methods_analysis.py), keeping
+   Matplotlib in `scripts/`. Save the PNG under `output/figures/` and include
+   its path in the list passed to `write_generated_figure_registry`.
+3. Reference the PNG from the manuscript section using `../../output/figures/`
+   and the same `{#fig:…}` label declared in the registry.
 
 ## Section Modification Protocol
 
