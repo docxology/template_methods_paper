@@ -58,10 +58,11 @@ method.
 
 The project sits on the repository's three pillars:
 
-1. **`src/template_methods_paper/methods_dsl/` library**: pure, side-effect-free dataclasses and
-   functions — no plotting, no file I/O, and (with one declared logging
-   exception) no `infrastructure` imports. This purity is what makes the
-   library forkable and trivially testable.
+1. **`src/template_methods_paper/methods_dsl/` library**: the model,
+   validation, and compiler work on supplied data. Export writers accept
+   explicit paths. The orchestration scripts choose output paths and plot
+   results. The library's only declared `infrastructure` import is the logging
+   adapter.
 2. **`tests/` framework**: a zero-mock suite that exercises every gate, the
    compiler, and the exporters against real `Method` fixtures covering both
    the success path and every gate-failure mode.
@@ -88,7 +89,7 @@ that the DSL's vocabulary generalizes beyond wet-lab protocols, as
   function or report file that produced it.
 - **[@sec:experimental_setup]** lists the controlled vocabulary and software
   environment.
-- **[@sec:reproducibility]** records the artifact inventory and the exact
-  commands to regenerate everything.
+- **[@sec:reproducibility]** records the artifact inventory and the commands
+  for a fresh analysis and reader build.
 - **[@sec:scope]** states scope and related work so the exemplar is not
   mistaken for a general-purpose protocol-execution system.

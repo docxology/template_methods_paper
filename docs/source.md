@@ -4,9 +4,10 @@ The tested controlled-method specification library for the exemplar. All
 logic lives in the `template_methods_paper.methods_dsl` subpackage (at
 `src/template_methods_paper/methods_dsl/`) and is re-exported from
 `src/template_methods_paper/__init__.py` (`src/__init__.py` is a namespace
-shim). The library is standalone except one declared logging
-adapter (see [AGENTS.md](../src/template_methods_paper/AGENTS.md)): no plotting, no file I/O in the DSL
-itself, no other `infrastructure.*` imports.
+shim). The model, validation, and compiler work on supplied data. Export
+writers take explicit paths. Scripts choose output paths and plot results.
+See the [source guide](../src/template_methods_paper/AGENTS.md) for the
+declared logging import exception.
 
 ## Quick Start
 
@@ -26,7 +27,7 @@ print(plan.method_name, plan.plan_hash[:12], len(plan.steps))
 - **Method model** — `Method`, `Step`, `Resource`, `Parameter` as frozen dataclasses (`model.py`).
 - **Four staged validation gates** run in fixed order (`validation.py`).
 - **Deterministic compiler** — `Method` → scheduled, hashed `Plan` (`compiler.py`).
-- **Exporters** — worklist markdown, CSV, Mermaid graph, canonical JSON (`export.py`).
+- **Exporters** — worklist Markdown, CSV, Mermaid graph, and formatted JSON (`export.py`).
 - **Provenance hash-chain** with three trust tiers (`trust.py`).
 - **Type-safe** with full type hints and reStructuredText-style docstrings.
 

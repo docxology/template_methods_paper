@@ -42,10 +42,8 @@ def topological_order(method: Method) -> tuple[Step, ...]:
     """Return *method*'s steps in a deterministic dependency-respecting order.
 
     Kahn's algorithm: repeatedly remove a step whose dependencies are all
-    already scheduled, breaking ties by ascending ``step_id`` so the same
-    method always yields the same order (no reliance on dict/set iteration
-    order, which Python does not guarantee to be stable across versions for
-    this purpose).
+    already scheduled. Choose the smallest eligible ``step_id`` at each
+    iteration so the schedule is independent of the order of the input steps.
 
     Raises:
         CycleError: If the dependency graph is not acyclic.

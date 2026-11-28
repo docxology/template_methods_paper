@@ -22,10 +22,9 @@ def compile_method(method: Method) -> Plan:
     method.steps = sorted(method.steps, key=...)  # frozen dataclasses reject this
 ```
 
-Plotting, file I/O, and orchestration belong in `scripts/`, never in
-`src/template_methods_paper/methods_dsl/`. This is why every exporter in `export.py` returns text or
-takes an explicit `path: Path` argument rather than reaching for a global
-output directory.
+Keep plotting and output-path selection in `scripts/`. The DSL model,
+validation, and compiler operate on supplied data. Export formatters return
+values and export writers take explicit paths supplied by their callers.
 
 ## Type Hints
 

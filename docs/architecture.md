@@ -11,8 +11,8 @@ compilation logic hiding inside a script, reusable logic trapped outside
 
 | Layer | Primary Files | Public API | Invariants | Testability |
 |---|---|---|---|---|
-| **`src/template_methods_paper/methods_dsl/` — DSL Library** | `vocabulary.py`, `units.py`, `model.py`, `validation.py`, `compiler.py`, `export.py`, `trust.py`, `examples_methods.py` | Re-exported from `src/template_methods_paper/__init__.py` (`compile_method`, `run_all_gates`, …) | Pure dataclasses and functions; no plotting, no file I/O, no `infrastructure.*` imports except the one declared exception in `_logging.py` | Direct unit tests against real `Method` fixtures |
-| **`scripts/` — Orchestrators** | `scripts/methods_analysis.py`, `scripts/z_generate_manuscript_variables.py` | `run_methods_analysis()` + `main()` | All matplotlib + file writes + manuscript-variable generation live here; no DSL logic | `test_methods_analysis_script.py` runs it against a temp root |
+| **`src/template_methods_paper/methods_dsl/` — DSL Library** | `vocabulary.py`, `units.py`, `model.py`, `validation.py`, `compiler.py`, `export.py`, `trust.py`, `examples_methods.py` | Re-exported from `src/template_methods_paper/__init__.py` (`compile_method`, `run_all_gates`, …) | Pure model, validation, and compiler. Export writers accept explicit paths. `_logging.py` is the declared `infrastructure.*` import exception. | Direct unit tests against real `Method` fixtures |
+| **`scripts/` — Orchestrators** | `scripts/methods_analysis.py`, `scripts/z_generate_manuscript_variables.py` | `run_methods_analysis()` + `main()` | Select output locations, call the library and writers, plot figures, and hydrate the manuscript. | `test_methods_analysis_script.py` runs it against a temp root |
 | **`infrastructure/` — Cross-Cutting** | `infrastructure/rendering/`, `infrastructure/core/`, `infrastructure/validation/` | PDF rendering, logging, output validation | Generic reusable behavior only | Covered by the separate `tests/infra_tests/` suite |
 
 ## Pipeline-stage correspondence (BPL-inspired)

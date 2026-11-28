@@ -1,18 +1,19 @@
 # Reproducibility {#sec:reproducibility}
 
-This section explains how to regenerate every artifact in the study from a
-clean checkout. The exemplar's reproducibility guarantee is structural: each
-result is produced by a tested function and a thin script, then injected
-into the manuscript by generated-variable substitution — never transcribed
-by hand.
+This section describes a fresh analysis and render from a disposable
+working checkout. The analysis and manuscript-variable scripts provide the
+values used by the reader build.
 
-## How to regenerate everything
+## Regenerate the standard outputs
 
 The standalone checkout supplies the methods library and the two analysis
 entry points. With that checkout registered as a working project in the
 pinned template renderer, run the following from the working checkout.
 `renderer_root` is the absolute path to the template checkout at commit
-`87704feae0a4490ef7dad9c931d268e8c30273c2`.
+`87704feae0a4490ef7dad9c931d268e8c30273c2`. Move the tracked `output/`
+directory outside this working checkout before running either generator.
+Keep it as the earlier publication snapshot and use a fresh `output/` for
+the new build.
 
 ```bash
 uv sync --locked --extra dev --python 3.14
@@ -31,8 +32,8 @@ uv run --no-sync python scripts/pipeline/stage_04_validate.py --project working/
 
 ## Generated artifact registry
 
-The analysis script writes the following artifacts under
-`output/`:
+The standard analysis, hydration, render, and validation commands produce
+the following artifacts under `output/`.
 
 | Artifact | Produced by |
 |---|---|
@@ -41,18 +42,22 @@ The analysis script writes the following artifacts under
 | `data/compiled_plans.json` | Per-method plan summary, consumed by `src/template_methods_paper/manuscript_variables.py` |
 | `reports/gate_report.json` | `run_all_gates()` tally across both methods |
 | `reports/trust_chain_report.json` | `append_record()`/`verify_chain()` demonstration chain |
-| `figures/step_counts.png` | Step-count bar chart |
-| `data/manuscript_variables.json` | Every generated-variable value, written by `z_generate_manuscript_variables.py` |
+| `figures/step_counts.png` and `figures/figure_registry.json` | Analysis bar chart and figure metadata |
+| `data/manuscript_variables.json` and `manuscript/` | Variable map and hydrated sections from `z_generate_manuscript_variables.py` |
+| `pdf/template_methods_paper_combined.pdf`, `web/index.html`, and `slides/` | Enabled Stage 03 editions |
+| `reports/validation_report.json` and `reports/rendered_provenance.json` | Stage 04 validation and source binding |
 
-The `output/` tree is disposable and regenerated on every run; it is not the
-source of truth.
+The API glossary, `output/docs/api_glossary.md`, has a separate optional
+producer, `scripts/generate_api_docs.py`. Keep any retained publication
+artifacts in the saved snapshot alongside their original evidence.
 
 ## Determinism
 
 - `compile_method()` is deterministic by construction: the plan hash is
-  computed from a canonical, sort-keys JSON payload over `method_name`,
-  `method_version`, `target`, and each scheduled step's identifying fields —
-  never from a wall-clock timestamp or a UUID.
+  computed from compact UTF-8 JSON with sorted keys over `method_name`,
+  `method_version`, `target`, and each scheduled step's identifying fields.
+  See [@sec:methodology] for the exact serialization used to verify an
+  exported plan.
 - `topological_order()` breaks scheduling ties by ascending `step_id`, so
   the same `Method` object always yields the same step order across
   processes and platforms.

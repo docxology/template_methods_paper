@@ -15,8 +15,10 @@ methodology, the project deployed the three foundational pillars:
 
 1. **`src/template_methods_paper/methods_dsl/` library**: a controlled vocabulary, a dimensional
    unit system, four staged validation gates, a deterministic compiler, and
-   four export formats — with no plotting, no file I/O, and (with one
-   declared logging exception) no `infrastructure` imports.
+   four export formats. The model, validation, and compiler work on supplied
+   data. Export writers take explicit paths. Plotting and output selection
+   belong to the scripts, and the logging adapter is the declared
+   `infrastructure` import exception.
 2. **`tests/` integrity**: a zero-mock suite over real `Method` fixtures
    covering the success path and every gate-failure mode, under a ≥90%
    project coverage gate.

@@ -1,13 +1,12 @@
 # Results {#sec:results}
 
 This section reports the compiled plans for both worked example methods.
-Every number below is produced by the
-[methods analysis orchestrator](https://github.com/docxology/template_methods_paper/blob/main/scripts/methods_analysis.py)
-(`scripts/methods_analysis.py`),
-which calls `run_all_gates` and `compile_method` from `src/template_methods_paper/methods_dsl/` and
-writes `output/data/compiled_plans.json`, `output/reports/gate_report.json`,
-and `output/reports/trust_chain_report.json`. Running the script regenerates
-every artifact this section references.
+The [methods analysis orchestrator](https://github.com/docxology/template_methods_paper/blob/main/scripts/methods_analysis.py)
+calls `run_all_gates` and `compile_method` and writes
+`output/data/compiled_plans.json`, `output/reports/gate_report.json`,
+`output/reports/trust_chain_report.json`, and the step-count figure and
+registry. The manuscript variable generator reads those outputs and performs
+the live recompilation comparison.
 
 ## Compiled-plan summary
 
@@ -70,10 +69,13 @@ The results were validated through the zero-mock `tests/` suite:
 - **Script test** runs `run_methods_analysis()` against a temporary output
   root and confirms real worklist/CSV/Mermaid/JSON artifacts, reports, and a
   real PNG figure are written.
-- **Manuscript-variable test** confirms every generated-variable name used in
-  `docs/manuscript/*.md` is emitted by `generate_variables`.
+- **Manuscript-variable tests** check representative configuration, plan,
+  gate, and trust values and verify that required analysis inputs are enforced.
+- **Reader checks** use Stage 04 validation and inspection of the compiled-plan
+  table, step-count figure, and resolved citations in the combined editions.
+  Follow the [render guide](https://github.com/docxology/template_methods_paper/blob/main/docs/rendering_pipeline.md#run-the-pinned-renderer).
 
-All tests pass under the configured project coverage gate, with no mocks.
+Run the zero-mock suite with the configured project coverage gate.
 
 ## Discussion
 

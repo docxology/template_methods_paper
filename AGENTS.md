@@ -25,13 +25,17 @@ procedure.
 
 | Surface | Rule |
 | --- | --- |
-| `src/template_methods_paper/methods_dsl/` (domain) | Pure dataclasses and functions — **no** plotting, no file I/O, **no** `infrastructure` imports except the one sanctioned exception (`_logging.py`) |
-| `scripts/` | Thin orchestrators; may import `infrastructure/` and `src/`; the only place matplotlib + file writes live |
+| `src/template_methods_paper/methods_dsl/` (domain) | Pure model, validation, and compiler. Export writers accept explicit paths. `_logging.py` is the declared `infrastructure` import exception. |
+| `scripts/` | Thin orchestrators select output paths, call the library and writers, and plot results. |
 | Live counts | Link [`docs/_generated/COUNTS.md`](https://github.com/docxology/template/blob/main/docs/_generated/COUNTS.md); **do not** hardcode measured test totals or coverage % |
 
-The boundary is enforced by `check_project_src_infrastructure_boundary` via
-`scripts/audit/check_template_drift.py --strict` and
+This checkout declares its import boundary in
 [`docs/manuscript/layer_contract.yaml`](docs/manuscript/layer_contract.yaml).
+Template's `check_project_src_infrastructure_boundary` checks imports.
+Run from the Template checkout, `scripts/audit/check_template_drift.py --strict`
+checks its bundled `templates/template_methods_paper` exemplar as part of the
+Template audit. Use this checkout's contract and project tests for standalone
+changes.
 
 ## Configuration as the source of truth
 
@@ -102,5 +106,5 @@ quick reference commands, and pitfalls.
 - [Root projects AGENTS.md](https://github.com/docxology/template/blob/main/projects/AGENTS.md#permanent-canonical-exemplars) — public exemplar roster.
 - [Publishing guide](https://github.com/docxology/template/blob/main/docs/guides/publishing-guide.md) · [Zenodo DOI strategy](https://github.com/docxology/template/blob/main/docs/guides/zenodo-doi-strategy.md).
 - [`docs/manuscript/SYNTAX.md`](docs/manuscript/SYNTAX.md) — Pandoc citation/cross-reference syntax.
-- [`src/AGENTS.md`](src/template_methods_paper/AGENTS.md) / [`src/methods_dsl/AGENTS.md`](src/template_methods_paper/methods_dsl/AGENTS.md) — DSL library API reference.
+- [Installed package guide](src/template_methods_paper/AGENTS.md) and [Methods DSL API](src/template_methods_paper/methods_dsl/AGENTS.md).
 - [Maintenance backlog](docs/backlog.md) — template-status gaps and improvement ladder.
