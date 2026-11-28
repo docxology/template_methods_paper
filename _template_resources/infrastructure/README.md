@@ -8,7 +8,7 @@ The infrastructure layer provides generic, reusable functionality that can be ap
 
 ## Agent skills (`SKILL.md`)
 
-Each subpackage (and the package root) includes a **`SKILL.md`** with YAML frontmatter (`name`, `description`) so assistants can route work to the right module. **Discovery:** open [`.cursor/skill_manifest.json`](../.cursor/skill_manifest.json) (or `@.cursor/skill_manifest.json` in Cursor), search `infrastructure/**/SKILL.md`, open the hub [SKILL.md](SKILL.md), or use `@infrastructure/SKILL.md` / `@infrastructure/<module>/SKILL.md`. Regenerate the manifest after skill changes: `uv run python -m infrastructure.skills write`.
+Each subpackage (and the package root) includes a **`SKILL.md`** with YAML frontmatter (`name`, `description`) so assistants can route work to the right module. **Discovery:** open [`.cursor/skill_manifest.json`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/.cursor/skill_manifest.json) (or `@.cursor/skill_manifest.json` in Cursor), search `infrastructure/**/SKILL.md`, open the hub [SKILL.md](SKILL.md), or use `@infrastructure/SKILL.md` / `@infrastructure/<module>/SKILL.md`. Regenerate the manifest after skill changes: `uv run python -m infrastructure.skills write`.
 
 | Path | Frontmatter `name` | Description |
 | --- | --- | --- |
@@ -352,7 +352,7 @@ flowchart TD
 
 ## Testing
 
-Infrastructure modules maintain **≥60% test coverage** (live overall % → [`docs/development/coverage-gaps.md`](../docs/development/coverage-gaps.md)):
+Infrastructure modules maintain **≥60% test coverage** (live overall % → [`docs/development/coverage-gaps.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/coverage-gaps.md)):
 
 ```bash
 # Test all infrastructure
@@ -424,8 +424,8 @@ flowchart TB
 ## See Also
 
 - [AGENTS.md](AGENTS.md) - infrastructure documentation
-- [../tests/infra_tests/](../tests/infra_tests/) - Infrastructure test suite
-- [../scripts/](../scripts/) - Orchestration scripts
+- [../tests/infra_tests/](https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests) - Infrastructure test suite
+- [../scripts/](https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts) - Orchestration scripts
 
 <!-- foam-orphan-nav:start (hand-maintained: links sub-docs so they are reachable; no generator refreshes or validates this block) -->
 

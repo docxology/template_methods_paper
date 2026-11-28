@@ -1,0 +1,257 @@
+{
+  "destination_base": "dddb734bbeb576c7eb562add404b3868b0cdca94",
+  "destination_repository": "https://github.com/docxology/template_methods_paper",
+  "destination_tree": "0b2b6a8666d483c1e5a78692da2149c987ac58b7",
+  "files": {
+    "_template_resources/infrastructure/README.md": {
+      "after_blob": "cd83a422467bf646234a44327be5982d2c99f74e",
+      "after_hash": "c29f32364dbda42595a76d7112aa9a191b4e7698a1c03f7f95f325f10c6116c0",
+      "before_blob": "63a7e3e8878fb7cd991568ad1b81e8b42e1a18b3",
+      "before_hash": "40acd28cf00f51b8c2447676c6a927f7c99e9403d7fb283cbe53794dba4c74ae",
+      "rewritten_hrefs": {
+        "../.cursor/skill_manifest.json": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/.cursor/skill_manifest.json",
+        "../docs/development/coverage-gaps.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/coverage-gaps.md",
+        "../scripts/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts",
+        "../tests/infra_tests/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/benchmark/AGENTS.md": {
+      "after_blob": "7f16f2c9d0e27d6d76e6b9a61e73c3f202f3e6d5",
+      "after_hash": "512c5688f841501cc545297c8cdabf7f3bfed93ede0ce2802e2b804c862f2c9d",
+      "before_blob": "d537479568e4443ae47c32dc4644f4946c0119fc",
+      "before_hash": "033f165c55069c829eaefeac68d8a1231dd4aa63f1120575872b62f7f882fe3c",
+      "rewritten_hrefs": {
+        "../../tests/infra_tests/benchmark/AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/benchmark/AGENTS.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/benchmark/README.md": {
+      "after_blob": "de4255233d4d045f5f4acf073bb8de554349c2f7",
+      "after_hash": "95599873db17a3884741c730d5360c1fdb12c4f34d364490d76fa3cfd6cf8cf5",
+      "before_blob": "496060367517297646e4709febfb01a093930d18",
+      "before_hash": "3193163ddc6383f6296f11fc490ab72839d0b8a06fa07c7cc25fb96409dd673c",
+      "rewritten_hrefs": {
+        "../../tests/infra_tests/benchmark/test_template_benchmark_harness.py": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/benchmark/test_template_benchmark_harness.py"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/config/AGENTS.md": {
+      "after_blob": "91613ea28dfda76a1e8e5be7127248f12c17e33f",
+      "after_hash": "53a7ed41691a053023b803aba68a4e5ebeadef8ac4b79a458565e00d6526fb87",
+      "before_blob": "2b695169313b9e5b5faa8c25007a1b0d38d1fb7c",
+      "before_hash": "94d11946e0f0793dda9ac1fb7c72108f9b233a5b182bc12df749c0cd1e04adac",
+      "rewritten_hrefs": {
+        "../../docs/operational/config/configuration.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/operational/config/configuration.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/config/README.md": {
+      "after_blob": "e7cab96faa38db0712d0404c5c21123767c35a55",
+      "after_hash": "02c2708bf4cf26c3c75a1a2ab492bfd0c8245a6a37d951089537e8930fd1955d",
+      "before_blob": "20bb926edaada9ddee5ac95d1785a0b36ddd2d5d",
+      "before_hash": "e308ed67e36d6d2cb257f783a7c884daaeb11f06153318ab381961431fb3a990",
+      "rewritten_hrefs": {
+        "../../docs/development/root-case-policy.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/root-case-policy.md",
+        "../../docs/operational/config/configuration.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/operational/config/configuration.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/core/AGENTS.md": {
+      "after_blob": "5df449c03d7c730c961c0090bec16f23031f877a",
+      "after_hash": "81486ff64de3821c04b18648f1b5bc73bf7731fd2178e14687cea633ca1904d6",
+      "before_blob": "18d8a8fc826f86773bcc07977e128cac5aa2c18f",
+      "before_hash": "ef800adb46584d72e294c0d75149433983dce17cb0622c80f397446d2a0d4155",
+      "rewritten_hrefs": {
+        "../../.cursor/hooks/state/README.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/.cursor/hooks/state/README.md",
+        "../../docs/rules/memory_and_decision_records.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/rules/memory_and_decision_records.md",
+        "../../scripts/gates/AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/gates/AGENTS.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/core/config/AGENTS.md": {
+      "after_blob": "9c72e90a01d8022287919b654b9ac8f70dd8d72d",
+      "after_hash": "1dd371fbf8dbfbb0ba9602b5d6ae55463cc5c5dd55acf7106701fa0533f97e10",
+      "before_blob": "aa6036e09c4a5dfc434b699cb82be2ab81cabc42",
+      "before_hash": "22e81d17e40a1d023259782854dbdbe77c138acac6dcbb4338d3c4629828fb1a",
+      "rewritten_hrefs": {
+        "../../../docs/operational/config/configuration.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/operational/config/configuration.md",
+        "../../../docs/operational/config/configuration.md#per-project-schema-extensions": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/operational/config/configuration.md#per-project-schema-extensions"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/core/telemetry/AGENTS.md": {
+      "after_blob": "4ceef85ab952fafb79854d60f1f94f622bfed202",
+      "after_hash": "7fe8b21ab8bf38e270272058be24ef089cb93606a73e133c4aab7a214b03c77b",
+      "before_blob": "f01b39194d1d5b07d02b112964824f715d9a6f81",
+      "before_hash": "ab2efec281347478e38c380cbe8a3ca8ea6aa264b2b511df187302b0ebb8122b",
+      "rewritten_hrefs": {
+        "../../../docs/_generated/COUNTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/_generated/COUNTS.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/documentation/AGENTS.md": {
+      "after_blob": "7d145bcdbc40a6881a6fe91d781e9e6cb553ebb7",
+      "after_hash": "dd863a00f9ad648d3b9d958c1f0ee967b8a1be52dcb86707e8b9e2bc91f23a80",
+      "before_blob": "206e4599e8912facaf56bf7966090cc4b4fe4651",
+      "before_hash": "ac952c9f390f3856b35607241e1c886ad61816db368bf03bd8ea2e8b25a3cae3",
+      "rewritten_hrefs": {
+        "../../docs/_generated/AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/_generated/AGENTS.md",
+        "../../tests/infra_tests/audit/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/audit"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/documentation/README.md": {
+      "after_blob": "698c2287ca861a67f36fc6e74b7d7355f7c2c4d3",
+      "after_hash": "9c85233a254dad9e316d08e82dc6b3f11aeb85e856e4e25bd43d0888eebbc22e",
+      "before_blob": "50e4351640eb79cb4f8ca11addfdab626ee6e12d",
+      "before_hash": "3e584687c2dfcf933a92d72f6853361be731e103f070353bcf872b3b4fc92094",
+      "rewritten_hrefs": {
+        "../../docs/reference/api-reference.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/reference/api-reference.md",
+        "../../scripts/docgen/api_reference.py": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/docgen/api_reference.py",
+        "../../scripts/docgen/stage_table.py": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/docgen/stage_table.py"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/orchestration/AGENTS.md": {
+      "after_blob": "fca9d30b16fc49db29ba8a07e258ad0335ae49ab",
+      "after_hash": "aaf3f39ff3fa941d0e800b4e75011bd1e121f51c86284d31e5b6a648c3c55f8c",
+      "before_blob": "46fe05401281b9a890266634f15674ae4ef69c12",
+      "before_hash": "e7fbf6461d2f7d5de752003653d2bf16ac3b8af8d56e26a007171588d058c2d8",
+      "rewritten_hrefs": {
+        "../../docs/_generated/COUNTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/_generated/COUNTS.md",
+        "../../docs/_generated/active_projects.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/_generated/active_projects.md",
+        "../../scripts/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts",
+        "../../tests/infra_tests/orchestration/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/orchestration",
+        "../../tests/infra_tests/orchestration/test_stage_policy.py": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/orchestration/test_stage_policy.py"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/project/AGENTS.md": {
+      "after_blob": "7ed2bcedc7b0971ece4285499ca567a4e386dfc6",
+      "after_hash": "b2dcaa01ec7547d63faba8968d79b5403e648ec78c6d7c09deec9e9948f3922e",
+      "before_blob": "bda59fbaf5c43f58799fdae0cff0c330ab4bd848",
+      "before_hash": "1107438b6f760292d47f9e929441c16a5ad9854054d19a2dc4743011dcdb88ad",
+      "rewritten_hrefs": {
+        "../../AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/AGENTS.md",
+        "../../docs/development/installed-wheel-matrix.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/installed-wheel-matrix.md",
+        "../../docs/development/public-runtime-matrix.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/public-runtime-matrix.md",
+        "../../docs/guides/codegraph-local.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/codegraph-local.md",
+        "../../scripts/AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/AGENTS.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/project/README.md": {
+      "after_blob": "9ebb427dd5a6e815f522ab03fb8e201103198ad9",
+      "after_hash": "7709c76d233ac504b5a53cccf872abdfe2231772fe4823868943358484ddbb97",
+      "before_blob": "35f6c2a4ebc921ca3a4734234bdbda3d4b036224",
+      "before_hash": "62d762ca67677161489d687a200d599391253521d7da13523e060dabe73ad766",
+      "rewritten_hrefs": {
+        "../../docs/development/installed-wheel-matrix.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/installed-wheel-matrix.md",
+        "../../docs/guides/codegraph-local.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/codegraph-local.md",
+        "../../projects/AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/projects/AGENTS.md",
+        "../../scripts/AGENTS.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/AGENTS.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/publishing/AGENTS.md": {
+      "after_blob": "7a3adc25817da635d99d47c4608c63f833a77b5e",
+      "after_hash": "1a4cdde10b1196723f03aecb7ef2b2ae5dc6e2f5eda5e4e832f391f38e5e3f65",
+      "before_blob": "26f548a6778c6ed04ef3f4ebf7eadbb0e9c9ffae",
+      "before_hash": "c06e2e6978900e7c3e10f14cf95d97efe3243e42ba60d0d0050dd414bf1bec95",
+      "rewritten_hrefs": {
+        "../../docs/guides/publication-removals.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/publication-removals.md",
+        "../../docs/guides/publishing-guide.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/publishing-guide.md",
+        "../../docs/guides/standalone-install-projection.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/standalone-install-projection.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/publishing/README.md": {
+      "after_blob": "106c7aad468abb784c9c4072da2214814a1cc870",
+      "after_hash": "021adc0259c502f886625cb446e2348fbea909a81f5852fe23136b9746837448",
+      "before_blob": "9d4f2460765bcdf077159decab83a3c712f0f1bb",
+      "before_hash": "5f050eed72b2309e2ae62bb7e2aa4ca456671b0cfb9ddcdad443e0f5613e5803",
+      "rewritten_hrefs": {
+        "../../docs/guides/publication-runbook.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/publication-runbook.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/publishing/archival/AGENTS.md": {
+      "after_blob": "718d75f9ec6ca25112c1f9e6d433b82786df20ee",
+      "after_hash": "e18125def5ff82d714c07e797e14a2edfe00b8e666f93803c83d71c8487db69b",
+      "before_blob": "d9272e92a8b770707566fd671d03a08e483b9fab",
+      "before_hash": "1a0fa4a12d5d2f0b4b1fe2bc9e96afb4eeb4d6e41547eab697831e359d1db160",
+      "rewritten_hrefs": {
+        "../../../docs/maintenance/archival-targets.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/maintenance/archival-targets.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/publishing/archival/README.md": {
+      "after_blob": "06cad1019b1ce8463cf779efd0ce60848ee9b843",
+      "after_hash": "a48ef597bc82797f5d650dde6f3ddf588db46186731097f077d0186154b6c165",
+      "before_blob": "223d850c840ecd367f6d3878b042f903a4629964",
+      "before_hash": "b42d4873a47fbb4ee8f188fe817a787a8ae5d23beaeb816f9d7a6c923941df3b",
+      "rewritten_hrefs": {
+        "../../../docs/maintenance/archival-targets.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/maintenance/archival-targets.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/publishing/static_site/AGENTS.md": {
+      "after_blob": "54b100790b8ff47e0e9b3f853f936333164b3e43",
+      "after_hash": "ab64b89a44e88f20865b9b87c8a35688fdbb78b70d1ac62df0254034d6eb1d7c",
+      "before_blob": "b04216ed9cdea6ef9b57238c68a362c115e84671",
+      "before_hash": "88793a2114bfe75d9650aa3bf0a25433d53dcb409e8daa8d077a2ce909814ff9",
+      "rewritten_hrefs": {
+        "../../../docs/guides/publication-removals.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/publication-removals.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/publishing/zenodo/AGENTS.md": {
+      "after_blob": "5d4d3112d6a651e5d32d10399071e9111a7c96f2",
+      "after_hash": "b4cecc5400385982b0a1e47727ce4facd70198a6a6a11ec3d075f8897a18f5c3",
+      "before_blob": "0f796e1a93c561667f3a296de2fbc2fa9c6516fa",
+      "before_hash": "6e542bca412e1e689c731e0853df1052cad14ab1dc892eb55d99f8c5387cb433",
+      "rewritten_hrefs": {
+        "../../../docs/guides/publishing-guide.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/publishing-guide.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/rendering/README.md": {
+      "after_blob": "badeb54877ff189311cb40dc054cf8dc4bfa5354",
+      "after_hash": "2aed1a816208e8bdea616b26b4cd1a9a5ed6b5bba1492c82518537a469d559fa",
+      "before_blob": "95491589ffb4dc978744ffb463badb544e2d81d8",
+      "before_hash": "aaf97f81dbfe384a4a91b140b792d4a146f40b670d70e1985018ea73dd1fbc74",
+      "rewritten_hrefs": {
+        "../../docs/development/optional-dependencies.md": "https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/optional-dependencies.md"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/validation/docs/consistency/AGENTS.md": {
+      "after_blob": "fcbb1ad50f215e7c7b97a884e727532dbbe43656",
+      "after_hash": "11ae1cab7219b18d3e055f66bc691eaeae258e83738df319d64563b1c8b4b63d",
+      "before_blob": "204544d1d11ed3f7de717102e9ab108a825c13ca",
+      "before_hash": "dca6ec445fde9dc11c7de12ba48c5e13087f0d3f59cb26a7d413c129112187f6",
+      "rewritten_hrefs": {
+        "../../../../tests/infra_tests/validation/docs/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/validation/docs"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    },
+    "_template_resources/infrastructure/validation/rendered_snapshot/README.md": {
+      "after_blob": "8eed7847e92438e512006cee56cf73ecd43c47ae",
+      "after_hash": "980c5a66def6bf8de82474446914ea3fd1f69f37242f094607608d5029ca0742",
+      "before_blob": "44908e2df88c834f7530296306c06d5984ee2c71",
+      "before_hash": "fd7ec332f782ed7445adc10f1677af08fd62e16ba89a4dc5c9cd86ac7eb461c9",
+      "rewritten_hrefs": {
+        "../../../tests/infra_tests/validation/": "https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/validation"
+      },
+      "same_pandoc_structure_beyond_rewritten_link_targets": true
+    }
+  },
+  "historical_infrastructure_version": "4.0.1",
+  "historical_template_source": "d160eb9c90eec18e365117c3ccaef731c47d8604",
+  "prior_export_manifest_sha256": "e0bc29aa9008e45dd47a9648c53e7ac6a6b66dba38c06ca20dfeb660a6d352b6",
+  "prior_ownership_sha256": "136ef14eacae0584c5c79dcc72ec9c712020e9b795a0dd5408a7f567e53a28ad",
+  "schema_version": 1,
+  "scope": "Repair link destinations in the existing shared infrastructure guides.",
+  "updated_ownership_sha256": "886c37afb58d5ddd0b8b45ecde86a224ca9848cf7946d2ddabb9b02df1053245"
+}

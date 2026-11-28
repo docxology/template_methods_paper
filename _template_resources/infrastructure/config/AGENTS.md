@@ -20,4 +20,4 @@ Configuration files used by infrastructure components (repo-scoped defaults).
 ### See also
 
 - [`infrastructure/core/config/loader.py`](../core/config/loader.py)
-- [`docs/operational/config/configuration.md`](../../docs/operational/config/configuration.md)
+- [`docs/operational/config/configuration.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/operational/config/configuration.md)

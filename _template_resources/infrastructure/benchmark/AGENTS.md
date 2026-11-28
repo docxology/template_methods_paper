@@ -25,4 +25,4 @@ uv run python -m infrastructure.benchmark --repo-root .
 
 - [`README.md`](README.md)
 - [`../validation/AGENTS.md`](../validation/AGENTS.md)
-- [`../../tests/infra_tests/benchmark/AGENTS.md`](../../tests/infra_tests/benchmark/AGENTS.md)
+- [`../../tests/infra_tests/benchmark/AGENTS.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/benchmark/AGENTS.md)

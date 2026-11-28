@@ -27,4 +27,4 @@ uv run python scripts/audit/lint_docs.py --consistency-only
 ## See also
 
 - [`../AGENTS.md`](../AGENTS.md) — validation docs package
-- [`../../../../tests/infra_tests/validation/docs/`](../../../../tests/infra_tests/validation/docs/) — regression tests
+- [`../../../../tests/infra_tests/validation/docs/`](https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/validation/docs) — regression tests

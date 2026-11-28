@@ -82,6 +82,6 @@ the new report so the in-flight file is never affected. Failures inside
 
 ## Testing
 
-Tests (collected totals are in [`COUNTS.md`](../../../docs/_generated/COUNTS.md)):
+Tests (collected totals are in [`COUNTS.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/_generated/COUNTS.md)):
 - `tests/infra_tests/core/test_telemetry.py` — collector behaviour, Zero-Mock.
 - `tests/infra_tests/core/telemetry/test_retention.py` — `rotate()` coverage (synthetic 12-run pruning, idempotence, edge cases, collision handling, end-to-end collector integration).

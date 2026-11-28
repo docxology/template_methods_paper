@@ -367,7 +367,7 @@ loudly with `slides.capability.pdf-geometry-required` when `pdfplumber` is not
 available, because an uninspected PDF cannot satisfy the safe-area contract.
 The default `archive` profile does not require `pdfplumber` and retains its
 historical post-compile behavior. The full capability table is in
-[`../../docs/development/optional-dependencies.md`](../../docs/development/optional-dependencies.md).
+[`../../docs/development/optional-dependencies.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/development/optional-dependencies.md).
 
 After installing that capability, opt in through the source-owned
 `manuscript/config.yaml`:
