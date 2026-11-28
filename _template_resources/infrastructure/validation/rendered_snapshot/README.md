@@ -22,4 +22,4 @@ Focused implementation controls import scanning helpers from `_scan.py`.
 ## See Also
 
 - [`../AGENTS.md`](../AGENTS.md) - rendered-snapshot role in validation
-- [`../../../tests/infra_tests/validation/`](../../../tests/infra_tests/validation/) - rendered-provenance tests (`test_rendered_provenance_*` cluster)
+- [`../../../tests/infra_tests/validation/`](https://github.com/docxology/template/tree/d160eb9c90eec18e365117c3ccaef731c47d8604/tests/infra_tests/validation) - rendered-provenance tests (`test_rendered_provenance_*` cluster)

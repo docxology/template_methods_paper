@@ -670,7 +670,7 @@ For detailed function signatures and API documentation, see [AGENTS.md](AGENTS.m
   and the count line between `<!-- BEGIN:STAGE_SUMMARY -->` /
   `<!-- END:STAGE_SUMMARY -->`
   in a Markdown file (idempotent)
-- Driver: [`scripts/docgen/stage_table.py`](../../scripts/docgen/stage_table.py)
+- Driver: [`scripts/docgen/stage_table.py`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/docgen/stage_table.py)
   updates `README.md`, `.github/README.md`, `scripts/AGENTS.md`,
   `docs/RUN_GUIDE.md`, and `docs/core/workflow.md` in lockstep
 
@@ -685,9 +685,9 @@ For detailed function signatures and API documentation, see [AGENTS.md](AGENTS.m
 - `api_reference_gen.inject_api_reference(md_path, content)` - Replace
   the block between `<!-- BEGIN:API_REFERENCE -->` /
   `<!-- END:API_REFERENCE -->` (idempotent).
-- Driver: [`scripts/docgen/api_reference.py`](../../scripts/docgen/api_reference.py)
+- Driver: [`scripts/docgen/api_reference.py`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/scripts/docgen/api_reference.py)
   with `--write` (apply) and `--check` (CI gate) flags. Target:
-  [`docs/reference/api-reference.md`](../../docs/reference/api-reference.md).
+  [`docs/reference/api-reference.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/reference/api-reference.md).
   Drift fails the `validate` job in `.github/workflows/ci.yml`.
 
 ## API Glossary Generation

@@ -12,7 +12,7 @@ match both the root package version and a released changelog heading.
 
 For a release operator's path through standalone GitHub mirrors, real Zenodo DOI
 minting, optional mirrors, and archival handoff, start with
-[`../../docs/guides/publication-runbook.md`](../../docs/guides/publication-runbook.md).
+[`../../docs/guides/publication-runbook.md`](https://github.com/docxology/template/blob/d160eb9c90eec18e365117c3ccaef731c47d8604/docs/guides/publication-runbook.md).
 
 The Python API exposes BibTeX, APA, and MLA citation helpers. The
 `generate-citation` CLI subcommand currently exposes BibTeX only.
